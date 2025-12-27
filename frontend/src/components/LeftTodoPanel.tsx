@@ -152,15 +152,19 @@ export default function LeftTodoPanel({
           {done.map((t) => (
             <div className="taskItem" key={t.id}>
               <div className="taskLeft">
-                <button className="iconBtn" onClick={() => handleToggle(t.id)} title="Completed">
+                <button
+                  className="iconBtn"
+                  onClick={() => handleToggle(t.id)}
+                  title="Completed"
+                >
                   <img src="/assets/clover_gold.png" alt="gold clover" />
                 </button>
+        
                 <div className="taskText" style={{ opacity: 0.78 }}>
                   {t.text}
                 </div>
-                <div className="line" />
               </div>
-
+        
               {/* placeholder for flower drag target later */}
               <div style={{ width: 82, height: 54 }} />
             </div>
