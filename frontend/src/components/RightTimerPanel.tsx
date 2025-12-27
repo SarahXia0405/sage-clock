@@ -10,6 +10,11 @@ function fmt(sec: number) {
   return `${String(m).padStart(2, "0")}:${String(r).padStart(2, "0")}`;
 }
 
+function randInt(min: number, max: number) {
+  // inclusive
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
 export default function RightTimerPanel({
   state,
   onState
@@ -20,6 +25,11 @@ export default function RightTimerPanel({
   const [workMin, setWorkMin] = useState(25);
   const [restMin, setRestMin] = useState(5);
 
+  // ✅ session-based random tomato frame:
+  // work: 1..6, rest: 1..5
+  const [workFrame, setWorkFrame] = useState<number>(() => randInt(1, 6));
+  const [restFrame, setRestFrame] = useState<number>(() => randInt(1, 5));
+
   const remaining = state.timer.remaining_sec;
   const mode = state.timer.mode;
 
@@ -29,27 +39,36 @@ export default function RightTimerPanel({
   }, [remaining]);
 
   const tomatoSrc = useMemo(() => {
-    // simplest: just two frames; later you can map remaining ratio to work_1..work_n
-    if (mode === "work") return "/assets/work_1.png";
-    return "/assets/rest_1.png";
-  }, [mode]);
+    if (mode === "work") return `/assets/work_${workFrame}.png`;
+    return `/assets/rest_${restFrame}.png`;
+  }, [mode, workFrame, restFrame]);
 
   const bindTask = state.sage_task_id || state.timer.bound_task_id || null;
 
   const onApply = async () => {
+    // set work duration on backend
     await timerSet("work", workMin, bindTask);
-    // rest duration is handled client-side by skip or end-of-work; later we can store restMin too
+    // restMin we keep in UI for now; when switching to rest, you can later store it in backend too
+  };
+
+  const onStart = async () => {
+    // ✅ randomize once per Start
+    setWorkFrame(randInt(1, 6));
+    setRestFrame(randInt(1, 5));
+    await timerControl("start");
   };
 
   return (
     <div>
       <div className="topControls">
         <button className="btn secondary" onClick={onApply}>Set</button>
+
         {!state.timer.running ? (
-          <button className="btn" onClick={() => timerControl("start")}>Start</button>
+          <button className="btn" onClick={onStart}>Start</button>
         ) : (
           <button className="btn" onClick={() => timerControl("pause")}>Pause</button>
         )}
+
         <button className="btn secondary" onClick={() => timerControl("skip")}>Skip</button>
       </div>
 
@@ -80,7 +99,6 @@ export default function RightTimerPanel({
       </div>
 
       <div style={{ marginTop: 14, display: "flex", alignItems: "center", gap: 16 }}>
-        {/* tomato */}
         <img
           src={tomatoSrc}
           alt="tomato"
@@ -90,7 +108,6 @@ export default function RightTimerPanel({
           }}
         />
 
-        {/* digits */}
         <div className="timerDigits">
           <div className="digitBox">{digits[0]}</div>
           <div className="digitBox">{digits[1]}</div>
@@ -100,7 +117,6 @@ export default function RightTimerPanel({
         </div>
       </div>
 
-      {/* scene area */}
       <div className="scene">
         <div className="mini" style={{ marginBottom: 8 }}>
           Scene · Real-time clock is shown in bottom-right
