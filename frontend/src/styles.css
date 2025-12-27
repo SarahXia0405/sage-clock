@@ -74,7 +74,7 @@ body{
 .list{
   display:flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 14px;
   margin-top: 10px;
 }
 
@@ -88,42 +88,67 @@ body{
 .taskLeft{
   display:flex;
   align-items:center;
-  gap: 12px;
+  gap: 14px;
   flex: 1;
+  min-height: 68px; /* 让 clover 变大后对齐舒服 */
 }
 
 .taskText{
   font-size: 18px;
-  font-weight: 600;
+  font-weight: 700;
+  line-height: 1.2;
 }
 
+/* 原本的长线先保留类名，默认不显示（避免 TSX 没删时炸布局） */
 .line{
+  display: none;
   flex:1;
   height: 2px;
   background: var(--line);
   opacity: 0.7;
 }
 
+/* ---------------------------
+   Clover buttons (bigger)
+--------------------------- */
 .iconBtn{
-  width: 34px;
-  height: 34px;
-  border-radius: 10px;
+  width: 64px;
+  height: 64px;
+  border-radius: 14px;
   border: 0;
   background: transparent;
   cursor: pointer;
+  padding: 0;
 }
 
-.iconBtn img{ width: 100%; height: 100%; object-fit: contain; }
+.iconBtn img{
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
 
-.progressWrap{
+/* ---------------------------
+   Progress bar row:
+   - bar + sage on bar
+   - percent on the right
+--------------------------- */
+.progressRow{
   display:flex;
   align-items:center;
-  justify-content: space-between;
-  gap: 14px;
+  gap:14px;
+  margin-top: 8px;
+}
+
+.progressTrackWrap{
+  position: relative;
+  flex: 1;
+  height: 22px; /* 给 sage 站位 */
+  display:flex;
+  align-items:center;
 }
 
 .progressBar{
-  flex:1;
+  width: 100%;
   height: 14px;
   background: #d6d6d6;
   border-radius: 999px;
@@ -136,13 +161,24 @@ body{
   width: 0%;
 }
 
-.sageWalk{
+.sageWalkOnBar{
   position:absolute;
-  top: 12px;
-  left: 160px;
-  height: 54px;
+  top: -18px;
+  transform: translateX(-50%);
+  height: 46px;
+  pointer-events: none;
 }
 
+.progressPct{
+  width: 58px;
+  text-align: right;
+  font-weight: 900;
+  font-size: 22px;
+}
+
+/* ---------------------------
+   Right panel: timer UI
+--------------------------- */
 .timerDigits{
   display:flex;
   gap: 12px;
@@ -190,6 +226,7 @@ body{
   font-weight: 900;
 }
 
+/* Top right controls */
 .topControls{
   display:flex;
   justify-content: flex-end;
