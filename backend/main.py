@@ -85,11 +85,13 @@ class PlantFlowerReq(BaseModel):
 # -----------------------------
 @app.get("/state")
 def get_state():
+    timer_tick_if_running()  
     return {
         "state": STATE.model_dump(),
         "progress": recompute_progress(),
         "now": time.time(),
     }
+
 
 @app.post("/tasks")
 def create_task(req: CreateTaskReq):
