@@ -3,9 +3,11 @@ import React, { useEffect, useMemo, useState } from "react";
 export default function AnalogClock({
   size = 92,
   className,
+  style,
 }: {
   size?: number;
   className?: string;
+  style?: React.CSSProperties;
 }) {
   const [now, setNow] = useState(() => new Date());
 
@@ -27,6 +29,7 @@ export default function AnalogClock({
     return { hourDeg: hour, minDeg: minute, secDeg: second };
   }, [now]);
 
+
   return (
     <div
       className={className}
@@ -37,6 +40,7 @@ export default function AnalogClock({
         background: "#111",
         position: "relative",
         boxShadow: "0 10px 28px rgba(0,0,0,0.18)",
+        ...style, // ✅ allow external override (absolute positioning etc.)
       }}
       aria-label="Real-time clock"
     >
