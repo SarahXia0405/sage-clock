@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useMemo, useState } from "react";
 import type { AppState } from "../types";
 import { timerControl, timerSet } from "../api";
 import AnalogClock from "./AnalogClock";
@@ -14,11 +14,8 @@ function randInt(min: number, max: number) {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
-const LS_PLANTED_RIGHT = "potato_clock_planted_right_v1";
-
 export default function RightTimerPanel({
-  state,
-  onState
+  state
 }: {
   state: AppState;
   onState: (s: AppState) => void;
@@ -26,17 +23,12 @@ export default function RightTimerPanel({
   const [workMin, setWorkMin] = useState(25);
   const [restMin, setRestMin] = useState(5);
 
+  // random tomato frame
   const [workFrame, setWorkFrame] = useState<number>(() => randInt(1, 6));
   const [restFrame, setRestFrame] = useState<number>(() => randInt(1, 5));
 
-  // planted flower in right scene (persist)
-  const [planted, setPlanted] = useState<boolean>(() => {
-    return localStorage.getItem(LS_PLANTED_RIGHT) === "1";
-  });
-
-  useEffect(() => {
-    localStorage.setItem(LS_PLANTED_RIGHT, planted ? "1" : "0");
-  }, [planted]);
+  // planted flower (SESSION ONLY)
+  const [planted, setPlanted] = useState<boolean>(false);
 
   const remaining = state.timer.remaining_sec;
   const mode = state.timer.mode;
@@ -55,7 +47,7 @@ export default function RightTimerPanel({
 
   const onApply = async () => {
     await timerSet("work", workMin, bindTask);
-    // restMin still UI-only
+    // restMin still UI-only for now
   };
 
   const onStart = async () => {
@@ -64,31 +56,26 @@ export default function RightTimerPanel({
     await timerControl("start");
   };
 
-  const onSceneDragOver = (e: React.DragEvent) => {
-    // allow drop
-    e.preventDefault();
-  };
-
-  const onSceneDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    const payload = e.dataTransfer.getData("text/plain");
-    if (payload === "flower:ready") {
-      setPlanted(true);
-    }
-  };
-
   return (
     <div>
       <div className="topControls">
-        <button className="btn secondary" onClick={onApply}>Set</button>
+        <button className="btn secondary" onClick={onApply}>
+          Set
+        </button>
 
         {!state.timer.running ? (
-          <button className="btn" onClick={onStart}>Start</button>
+          <button className="btn" onClick={onStart}>
+            Start
+          </button>
         ) : (
-          <button className="btn" onClick={() => timerControl("pause")}>Pause</button>
+          <button className="btn" onClick={() => timerControl("pause")}>
+            Pause
+          </button>
         )}
 
-        <button className="btn secondary" onClick={() => timerControl("skip")}>Skip</button>
+        <button className="btn secondary" onClick={() => timerControl("skip")}>
+          Skip
+        </button>
       </div>
 
       <div style={{ display: "flex", alignItems: "center", gap: 14, marginTop: 10 }}>
@@ -99,13 +86,7 @@ export default function RightTimerPanel({
             value={workMin}
             min={1}
             onChange={(e) => setWorkMin(Number(e.target.value))}
-            style={{
-              width: 80,
-              height: 40,
-              borderRadius: 12,
-              border: "1px solid rgba(0,0,0,0.12)",
-              padding: "0 10px"
-            }}
+            style={{ width: 80, height: 40, borderRadius: 12, border: "1px solid rgba(0,0,0,0.12)", padding: "0 10px" }}
           />
           <span className="mini">min</span>
         </div>
@@ -117,13 +98,7 @@ export default function RightTimerPanel({
             value={restMin}
             min={1}
             onChange={(e) => setRestMin(Number(e.target.value))}
-            style={{
-              width: 80,
-              height: 40,
-              borderRadius: 12,
-              border: "1px solid rgba(0,0,0,0.12)",
-              padding: "0 10px"
-            }}
+            style={{ width: 80, height: 40, borderRadius: 12, border: "1px solid rgba(0,0,0,0.12)", padding: "0 10px" }}
           />
           <span className="mini">min</span>
         </div>
@@ -133,11 +108,9 @@ export default function RightTimerPanel({
         <img
           src={tomatoSrc}
           alt="tomato"
-          style={{ width: 90, height: 90, objectFit: "contain", cursor: mode === "rest" ? "pointer" : "default" }}
-          onError={(e) => {
-            (e.currentTarget as HTMLImageElement).style.display = "none";
-          }}
-          // 你后面要点番茄弹窗就在这里挂 onClick（仅 rest 时）
+          style={{ width: 90, height: 90, objectFit: "contain" }}
+          onError={(e) => ((e.currentTarget as HTMLImageElement).style.display = "none")}
+          draggable={false}
         />
 
         <div className="timerDigits">
@@ -154,32 +127,21 @@ export default function RightTimerPanel({
           Scene · Drop your flower onto the sage to plant
         </div>
 
-        {/* Drop target is EXACTLY the red-box sage area */}
-        <div className="sceneStage" onDragOver={onSceneDragOver} onDrop={onSceneDrop}>
-          <img className="sceneImg" src="/assets/scene_sage.png" alt="scene" />
+        <div
+          className="sceneStage"
+          onDragOver={(e) => e.preventDefault()}
+          onDrop={(e) => {
+            const v = e.dataTransfer.getData("text/plain");
+            if (v === "flower_ready") setPlanted(true);
+          }}
+        >
+          <img className="sceneImg" src="/assets/scene_sage.png" alt="scene" draggable={false} />
 
-          <AnalogClock
-            className="sageHeldClock"
-            size={104}
-            style={{
-              position: "absolute",
-              left: "52%",
-              top: "70%",
-              transform: "translate(-50%, -50%)",
-              zIndex: 10,
-              pointerEvents: "none"
-            }}
-          />
+          {/* clock on sage’s held clock */}
+          <AnalogClock className="sageHeldClock" size={104} />
 
-          {/* Planted flower on sage's right side */}
-          {planted ? (
-            <img
-              src="/assets/flow_5.png"
-              alt="planted flower"
-              className="plantedFlower"
-              draggable={false}
-            />
-          ) : null}
+          {/* planted flower: SMALL, same as left */}
+          {planted && <img className="plantedFlower" src="/assets/flow_5.png" alt="planted" draggable={false} />}
         </div>
       </div>
     </div>
