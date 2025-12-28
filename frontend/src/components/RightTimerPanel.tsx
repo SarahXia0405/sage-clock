@@ -1,4 +1,3 @@
-// frontend/src/components/RightTimerPanel.tsx
 import React, { useMemo, useState, useCallback } from "react";
 import type { AppState } from "../types";
 import { timerControl, timerSet } from "../api";
@@ -16,7 +15,6 @@ function randInt(min: number, max: number) {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
-// If your Left panel drag uses a different payload, change this:
 const FLOWER_DRAG_KEY = "flower_ready";
 
 export default function RightTimerPanel({
@@ -37,10 +35,8 @@ export default function RightTimerPanel({
   const [restModalOpen, setRestModalOpen] = useState(false);
   const [modalRestFrame, setModalRestFrame] = useState<number>(() => randInt(1, 5));
 
-  // ✅ Garden state (session-local)
+  // ✅ Garden (session-local)
   const [gardenFlowers, setGardenFlowers] = useState<Array<{ id: string; at: number }>>([]);
-
-  // Optional: visual hint when dragging flower over sage scene
   const [dragOverSage, setDragOverSage] = useState(false);
 
   const remaining = state.timer.remaining_sec;
@@ -61,7 +57,6 @@ export default function RightTimerPanel({
 
   const onApply = async () => {
     await timerSet("work", workMin, bindTask);
-    // restMin still UI-only (kept)
   };
 
   const onStart = async () => {
@@ -76,40 +71,30 @@ export default function RightTimerPanel({
     setRestModalOpen(true);
   };
 
-  // ===== Flower drop onto sage scene =====
-  const handleDragOverSage = useCallback((e: React.DragEvent) => {
-    // allow drop
+  // ===== Drop flower on sage =====
+  const onDragOverSage = useCallback((e: React.DragEvent) => {
     e.preventDefault();
-    if (!dragOverSage) setDragOverSage(true);
-  }, [dragOverSage]);
+    setDragOverSage(true);
+  }, []);
 
-  const handleDragLeaveSage = useCallback(() => {
+  const onDragLeaveSage = useCallback(() => {
     setDragOverSage(false);
   }, []);
 
-  const handleDropOnSage = useCallback((e: React.DragEvent) => {
+  const onDropOnSage = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     setDragOverSage(false);
 
-    const payload =
-      e.dataTransfer.getData("text/plain") ||
-      e.dataTransfer.getData("application/x-flower") ||
-      "";
+    const payload = e.dataTransfer.getData("text/plain");
+    if (payload !== FLOWER_DRAG_KEY) return;
 
-    // Accept either exact key, or a JSON-like payload containing it
-    const ok =
-      payload === FLOWER_DRAG_KEY ||
-      payload.includes(FLOWER_DRAG_KEY);
-
-    if (!ok) return;
-
-    // Add one flower into garden
+    // add to garden
     setGardenFlowers((prev) => [
       ...prev,
-      { id: `f_${Date.now()}_${Math.random().toString(16).slice(2)}`, at: Date.now() }
+      { id: `g_${Date.now()}_${Math.random().toString(16).slice(2)}`, at: Date.now() }
     ]);
 
-    // Tell Left panel to reset growth (simple event; Left can listen if you want)
+    // notify Left to reset growth
     window.dispatchEvent(new CustomEvent("flower:used"));
   }, []);
 
@@ -166,7 +151,7 @@ export default function RightTimerPanel({
       </div>
 
       <div style={{ marginTop: 14, display: "flex", alignItems: "center", gap: 16 }}>
-        {/* ✅ 不加背景：纯 img，可点区域就是图片本身 */}
+        {/* tomato (clickable only in rest) */}
         <img
           src={tomatoSrc}
           alt="tomato"
@@ -178,9 +163,7 @@ export default function RightTimerPanel({
             objectFit: "contain",
             cursor: isRest ? "pointer" : "default"
           }}
-          onError={(e) => {
-            (e.currentTarget as HTMLImageElement).style.display = "none";
-          }}
+          draggable={false}
           title={isRest ? "Click for a rest idea" : ""}
         />
 
@@ -193,35 +176,25 @@ export default function RightTimerPanel({
         </div>
       </div>
 
-      {/* ===== Scene (sage + real-time clock) ===== */}
+      {/* Scene */}
       <div className="scene">
         <div className="mini" style={{ marginBottom: 8 }}>
-          Scene · Drop your grown flower onto sage to plant it
+          Scene · Drop your flower onto sage to plant
         </div>
 
-        {/* ✅ 固定 sceneStage 缩放基准，避免 panel 拉伸导致钟不同步 */}
         <div
           className={`sceneStage ${dragOverSage ? "sceneStageDropActive" : ""}`}
-          style={{
-            maxWidth: 560,
-            margin: "0 auto",
-            position: "relative"
-          }}
-          onDragOver={handleDragOverSage}
-          onDragLeave={handleDragLeaveSage}
-          onDrop={handleDropOnSage}
-          title="Drop flower here to plant"
+          style={{ maxWidth: 560, margin: "0 auto", position: "relative" }}
+          onDragOver={onDragOverSage}
+          onDragLeave={onDragLeaveSage}
+          onDrop={onDropOnSage}
+          title="Drop flower here"
         >
           <img
             className="sceneImg"
             src="/assets/scene_sage.png"
             alt="scene"
-            style={{
-              width: "100%",
-              height: "auto",
-              display: "block",
-              objectFit: "contain"
-            }}
+            style={{ width: "100%", height: "auto", display: "block", objectFit: "contain" }}
             draggable={false}
           />
 
@@ -240,17 +213,10 @@ export default function RightTimerPanel({
         </div>
       </div>
 
-      {/* ===== Garden (below sage) ===== */}
+      {/* Garden */}
       <div className="gardenStage">
         <div className="gardenBg">
-          <img
-            src="/assets/garden.png"
-            alt="garden"
-            draggable={false}
-            onError={(e) => {
-              (e.currentTarget as HTMLImageElement).style.display = "none";
-            }}
-          />
+          <img src="/assets/garden.png" alt="garden" draggable={false} />
         </div>
 
         <div className="gardenFlowers">
@@ -267,7 +233,7 @@ export default function RightTimerPanel({
         </div>
       </div>
 
-      {/* ✅ 真正弹窗：居中覆盖（你已有独立组件） */}
+      {/* Rest modal */}
       <RestIdeasModal
         open={restModalOpen}
         onClose={() => setRestModalOpen(false)}
