@@ -845,3 +845,9 @@ body{
     font-size: 18px;
   }
 }
+.userIdeaError{
+  color: rgba(0,0,0,0.7);
+  font-weight: 800;
+  font-size: 14px;
+  margin-top: -6px;
+}
