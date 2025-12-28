@@ -708,3 +708,259 @@ body{
   margin-right: 6px;
   opacity: 0.75;
 }
+
+/* ============ RestIdeas Modal V2 ============ */
+
+/* 统一控制：idea 框高度 = sage 高度 */
+.modalCard{
+  --rest-hero-h: 130px; /* 你可以调：120~150 之间看你图片比例 */
+}
+
+.restModalBodyV2{
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  margin-top: 12px;
+}
+
+/* 左侧 idea 框：高度锁定为 sage 高度 */
+.restIdeaBoxV2{
+  flex: 1 1 auto;
+  height: var(--rest-hero-h);
+  border-radius: 16px;
+  border: 2px solid #000;
+  background: rgba(255,255,255,0.08);
+  padding: 14px 16px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+
+  /* 防止太长撑爆 */
+  overflow: hidden;
+}
+
+/* 右侧 sage：点击施法 */
+.sageBtn{
+  position: relative;
+  flex: 0 0 auto;
+  height: var(--rest-hero-h);
+  width: auto;
+  border: none;
+  background: transparent;
+  padding: 0;
+  cursor: pointer;
+}
+
+.sageImg{
+  height: var(--rest-hero-h);
+  width: auto;
+  display: block;
+  user-select: none;
+}
+
+/* 光点容器 */
+.sparkles{
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0;
+}
+
+.sparklesOn{
+  opacity: 1;
+}
+
+/* 每个光点 */
+.sp{
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.95);
+  box-shadow: 0 0 10px rgba(255,255,255,0.9);
+  transform: translate(-50%, -50%) scale(0.6);
+  opacity: 0;
+}
+
+/* 光点位置（围绕法杖附近，按你图可以再微调） */
+.sp1{ left: 55%; top: 48%; }
+.sp2{ left: 62%; top: 40%; }
+.sp3{ left: 68%; top: 52%; }
+.sp4{ left: 60%; top: 58%; }
+.sp5{ left: 72%; top: 44%; }
+.sp6{ left: 50%; top: 56%; }
+.sp7{ left: 66%; top: 62%; }
+.sp8{ left: 58%; top: 36%; }
+
+.sparklesOn .sp{
+  animation: sparklePop 520ms ease-out forwards;
+}
+
+@keyframes sparklePop{
+  0%   { opacity: 0; transform: translate(-50%, -50%) scale(0.4); }
+  20%  { opacity: 1; transform: translate(-50%, -50%) scale(1.2); }
+  100% { opacity: 0; transform: translate(-50%, -50%) translateY(-10px) scale(0.6); }
+}
+
+/* 下方 User idea（图三） */
+.userIdeaRow{
+  margin-top: 16px;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+/* 左侧输入框 */
+.userIdeaInput{
+  flex: 1 1 auto;
+  height: 46px;
+  border-radius: 14px;
+  border: 2px solid #000;
+  padding: 0 14px;
+  background: rgba(255,255,255,0.08);
+  outline: none;
+}
+
+/* 右侧两个按钮 */
+.userIdeaActions{
+  display: flex;
+  gap: 14px;
+  flex: 0 0 auto;
+}
+
+.userIdeaBtn{
+  height: 46px;
+  min-width: 132px; /* 按图三那种“胖按钮” */
+  border-radius: 999px;
+  border: none;
+  background: #000;
+  color: #fff;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+/* ===== Trigger row (bottom-left) ===== */
+.userIdeaTriggerRow{
+  margin-top: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.userIdeaTrigger{
+  flex: 1 1 auto;
+  height: 46px;
+  border-radius: 14px;
+  border: 2px solid rgba(0,0,0,0.85);
+  background: rgba(255,255,255,0.06);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 14px;
+  cursor: pointer;
+}
+
+.ideaEmoji{
+  font-size: 18px;
+}
+
+.userIdeaTriggerText{
+  opacity: 0.75;
+  font-style: italic;
+}
+
+.ideaEmojiBtn{
+  flex: 0 0 auto;
+  height: 46px;
+  width: 56px;
+  border-radius: 14px;
+  border: 2px solid rgba(0,0,0,0.85);
+  background: rgba(255,255,255,0.06);
+  cursor: pointer;
+  font-size: 18px;
+}
+
+/* ===== Secondary modal ===== */
+.ideaModalOverlay{
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+.ideaModalCard{
+  position: relative;
+  width: min(720px, calc(100vw - 40px));
+  border-radius: 26px;
+  background: rgba(185,185,185,0.96);
+  padding: 22px 22px 20px;
+}
+
+.ideaModalClose{
+  position: absolute;
+  top: 10px;
+  right: 14px;
+  border: none;
+  background: transparent;
+  font-size: 28px;
+  cursor: pointer;
+}
+
+.ideaModalHeader{
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-start;
+  margin-bottom: 14px;
+}
+
+.ideaModalIcon{
+  width: 76px;  /* 图三左上角那种大小，你可调 */
+  height: auto;
+  display: block;
+  user-select: none;
+}
+
+.ideaModalBody{
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* 复用你之前的输入/按钮样式也可以，这里确保二级弹窗里一致 */
+.userIdeaInput{
+  height: 56px;
+  border-radius: 16px;
+  border: 2px solid #000;
+  padding: 0 16px;
+  background: rgba(255,255,255,0.08);
+  outline: none;
+}
+
+.userIdeaActions{
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.userIdeaBtn{
+  height: 52px;
+  flex: 1 1 0;
+  border-radius: 999px;
+  border: none;
+  background: #000;
+  color: #fff;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.userIdeaHint{
+  opacity: 0.6;
+  font-size: 13px;
+  text-align: right;
+}
