@@ -217,23 +217,27 @@ body{
   height: calc(100vh - 36px); /* padding 18*2 */
 }
 
-.panelBox{
-  background: rgba(255,255,255,0.0);
-  border-radius: var(--radius);
-  min-height: 0; /* critical for inner scroll */
-}
-
 .panelHeader{
   display:flex;
   align-items:center;
   justify-content: space-between;
 }
 
+.panelBox{
+  background: rgba(255,255,255,0.0);
+  border-radius: var(--radius);
+  min-height: 0;              /* critical */
+  display: flex;              /* critical */
+  flex-direction: column;     /* critical */
+}
+
 .panelScroll{
   overflow-y: auto;
   padding-right: 6px;
-  min-height: 0;
+  min-height: 0;              /* critical */
+  flex: 1;                    /* critical: take remaining height */
 }
+
 
 /* optional nicer scrollbars (webkit) */
 .panelScroll::-webkit-scrollbar{
@@ -319,3 +323,5 @@ body{
   color:#111;
   border: 1px solid rgba(0,0,0,0.12);
 }
+
+
