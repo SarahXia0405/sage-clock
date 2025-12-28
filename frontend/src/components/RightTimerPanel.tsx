@@ -146,19 +146,6 @@ export default function RightTimerPanel({
       </div>
 
       <div className="scene">
-        <div className="mini" style={{ marginBottom: 8 }}>
-          Scene · Real-time clock is shown on sage’s clock
-        </div>
-
-        {/* ✅ 固定 sceneStage 缩放基准，避免 panel 拉伸导致钟不同步 */}
-        <div
-          className="sceneStage"
-          style={{
-            maxWidth: 560,
-            margin: "0 auto",
-            position: "relative"
-          }}
-        >
           <img
             className="sceneImg"
             src="/assets/scene_sage.png"
