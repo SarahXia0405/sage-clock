@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useMemo, useState } from "react";
 import type { AppState, Progress, Task } from "../types";
 import ProgressBar from "./ProgressBar";
 import { createTask, setSage, toggleDone } from "../api";
@@ -9,13 +9,9 @@ function splitTasks(tasks: Task[]) {
   return { todo, done };
 }
 
-const LS_WATER = "potato_clock_water_count_v1";
-
 export default function LeftTodoPanel({
   state,
-  progress,
-  onState,
-  onProgress
+  progress
 }: {
   state: AppState;
   progress: Progress;
@@ -25,55 +21,34 @@ export default function LeftTodoPanel({
   const { todo, done } = useMemo(() => splitTasks(state.tasks), [state.tasks]);
   const [text, setText] = useState("");
 
-  // -------- Watering & Flower Growth (persisted) --------
-  const [waterCount, setWaterCount] = useState<number>(() => {
-    const v = Number(localStorage.getItem(LS_WATER) || "0");
-    return Number.isFinite(v) ? v : 0;
-  });
+  // ---- Progress bar sage position (0..100 mapped to track) ----
+  const sageLeftPct = useMemo(() => {
+    const pct = Math.max(0, Math.min(100, progress.pct || 0));
+    return pct;
+  }, [progress.pct]);
 
-  const [watering, setWatering] = useState(false);
-
-  const flowStage = useMemo(() => {
-    const stage = 1 + Math.floor(waterCount / 3);
-    return Math.min(5, Math.max(1, stage));
-  }, [waterCount]);
-
-  useEffect(() => {
-    localStorage.setItem(LS_WATER, String(waterCount));
-  }, [waterCount]);
-
-  // Detect newly completed tasks (done transitions)
-  const prevDoneIdsRef = useRef<Set<string>>(new Set());
-  useEffect(() => {
-    const nowDoneIds = new Set(state.tasks.filter((t) => t.done).map((t) => t.id));
-    const prev = prevDoneIdsRef.current;
-
-    let newlyDone = 0;
-    for (const id of nowDoneIds) {
-      if (!prev.has(id)) newlyDone += 1;
-    }
-
-    if (newlyDone > 0) {
-      setWaterCount((c) => c + newlyDone);
-
-      setWatering(true);
-      window.setTimeout(() => setWatering(false), 950);
-    }
-
-    prevDoneIdsRef.current = nowDoneIds;
-  }, [state.tasks]);
-
-  // -------- Current sage task logic --------
+  // ---- Current task for sage_read (must always exist) ----
   const currentSageTaskId = useMemo(() => {
-    const desired = state.sage_task_id || null;
-    if (desired) {
-      const t = state.tasks.find((x) => x.id === desired);
-      if (t && !t.done) return desired;
-    }
-    return todo[0]?.id ?? null;
-  }, [state.sage_task_id, state.tasks, todo]);
+    if (state.sage_task_id) return state.sage_task_id;
+    if (todo[0]?.id) return todo[0].id;
+    // if no todo left, keep showing on last done task (or null)
+    if (done[0]?.id) return done[0].id;
+    return null;
+  }, [state.sage_task_id, todo, done]);
 
-  const pct = progress.pct;
+  // ---- Flower growth (RESET EACH SESSION) ----
+  // Each completed task => waterCount + 1
+  // Every 3 waters => grow stage (+1), stage 1..5
+  const [waterCount, setWaterCount] = useState<number>(0);
+  const [watering, setWatering] = useState<boolean>(false);
+
+  const flowerStage = useMemo(() => {
+    // stage: 0 means none yet; show flow_1 once any water happens
+    const stage = Math.min(5, Math.max(0, Math.floor(waterCount / 3) + (waterCount > 0 ? 1 : 0)));
+    return stage; // 0..5
+  }, [waterCount]);
+
+  const flowerReady = flowerStage >= 5;
 
   const onAdd = async () => {
     const v = text.trim();
@@ -83,235 +58,199 @@ export default function LeftTodoPanel({
   };
 
   const handleToggle = async (id: string) => {
+    // We want: clicking green clover => task done => gold & move down
+    // Also watering animation triggers when a task transitions to done.
+    const target = state.tasks.find((t) => t.id === id);
+    const wasDone = !!target?.done;
+
     await toggleDone(id);
+
+    // If it was not done and now becomes done, trigger watering
+    if (!wasDone) {
+      setWaterCount((c) => c + 1);
+      setWatering(true);
+      window.setTimeout(() => setWatering(false), 900);
+    }
   };
 
-  const handleDropSage = async (taskId: string) => {
+  const handleSetCurrent = async (taskId: string) => {
     await setSage(taskId);
-  };
-
-  // flower is ONLY draggable source now (drop target is on RIGHT panel)
-  const canDragFlower = flowStage >= 5;
-  const onFlowerDragStart = (e: React.DragEvent) => {
-    if (!canDragFlower) return;
-    e.dataTransfer.setData("text/plain", "flower:ready");
-    e.dataTransfer.effectAllowed = "copy";
   };
 
   return (
     <div className="card">
-      <div className="panelHeader">
+      {/* Header */}
+      <div className="row" style={{ justifyContent: "space-between" }}>
         <div className="sectionTitle">To-Do List</div>
-      </div>
-
-      {/* Progress row: bar + sage on bar + % on right */}
-      <div className="progressRow">
-        <div className="progressTrackWrap">
-          <ProgressBar pct={pct} />
-          <img
-            className="sageWalkOnBar"
-            src="/assets/sage_walk.png"
-            alt="sage walking"
-            style={{ left: `${pct}%` }}
-            onError={(e) => {
-              (e.currentTarget as HTMLImageElement).style.display = "none";
-            }}
-          />
-        </div>
-        <div className="progressPct">{pct}%</div>
       </div>
 
       <div className="divider" />
 
-      <div className="leftSplit">
-        {/* TOP: TODO */}
-        <div className="panelBox" style={{ flex: "0 0 54%" }}>
-          <div className="row" style={{ gap: 10 }}>
-            <input
-              value={text}
-              placeholder="Add a task…"
-              onChange={(e) => setText(e.target.value)}
-              style={{
-                flex: 1,
-                height: 44,
-                borderRadius: 14,
-                border: "1px solid rgba(0,0,0,0.12)",
-                padding: "0 12px",
-                fontSize: 16
-              }}
-            />
-            <button className="btn" onClick={onAdd}>
-              Add
-            </button>
-          </div>
+      {/* Progress row: bar + sage on bar + pct on right */}
+      <div className="progressRow">
+        <div className="progressTrackWrap">
+          <ProgressBar pct={progress.pct} />
+          <img
+            className="sageWalkOnBar"
+            src="/assets/sage_walk.png"
+            alt="sage walk"
+            style={{ left: `${sageLeftPct}%` }}
+            draggable={false}
+          />
+        </div>
+        <div className="progressPct">{progress.pct}%</div>
+      </div>
 
-          <div className="panelScroll" style={{ marginTop: 12, height: "calc(100% - 60px)" }}>
-            <div className="list">
+      {/* Split scroll areas */}
+      <div className="leftSplit" style={{ marginTop: 12 }}>
+        {/* TOP: TODO */}
+        <div className="panelBox" style={{ flex: 1, minHeight: 220 }}>
+          <div className="todoBox">
+            <div className="row" style={{ gap: 10 }}>
+              <input
+                value={text}
+                placeholder="Add a task…"
+                onChange={(e) => setText(e.target.value)}
+                style={{
+                  flex: 1,
+                  height: 46,
+                  borderRadius: 16,
+                  border: "1px solid rgba(0,0,0,0.12)",
+                  padding: "0 14px",
+                  fontSize: 16,
+                  background: "rgba(255,255,255,0.7)"
+                }}
+              />
+              <button className="btn" onClick={onAdd}>
+                Add
+              </button>
+            </div>
+
+            <div className="panelScroll" style={{ marginTop: 14, height: "calc(100% - 70px)" }}>
               {todo.length === 0 ? (
-                <div className="mini" style={{ fontSize: 18, fontWeight: 800, opacity: 0.7, padding: "12px 2px" }}>
+                <div style={{ marginTop: 18, color: "rgba(0,0,0,0.45)", fontWeight: 800 }}>
                   No active task
                 </div>
-              ) : null}
+              ) : (
+                <div className="list">
+                  {todo.map((t) => {
+                    const isSageHere = currentSageTaskId === t.id;
+                    return (
+                      <div className="taskItem" key={t.id}>
+                        <div className="taskLeft">
+                          <button className="iconBtn" onClick={() => handleToggle(t.id)} title="Mark as done">
+                            <img src="/assets/clover_green.png" alt="clover green" draggable={false} />
+                          </button>
 
-              {todo.map((t) => {
-                const isSageHere = currentSageTaskId === t.id;
+                          <div className="taskText">{t.text}</div>
+                        </div>
 
-                return (
-                  <div className="taskItem" key={t.id}>
-                    <div className="taskLeft">
-                      <button className="iconBtn" onClick={() => handleToggle(t.id)} title="Mark as done">
-                        <img src="/assets/clover_green.png" alt="clover" />
-                      </button>
-
-                      <div className="taskText">{t.text}</div>
-                    </div>
-
-                    {/* Sage drop zone (ONLY for setting current task now) */}
-                    <div
-                      onDragOver={(e) => e.preventDefault()}
-                      onDrop={() => handleDropSage(t.id)}
-                      style={{
-                        width: 190,
-                        height: 70,
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        gap: 10,
-                        borderRadius: 18,
-                        border: "1px dashed rgba(0,0,0,0.18)",
-                        background: isSageHere ? "rgba(0,0,0,0.04)" : "transparent",
-                        padding: "0 12px"
-                      }}
-                      title="Drop to set as current"
-                    >
-                      {isSageHere ? (
-                        <>
-                          <img src="/assets/sage_read.png" alt="sage reading" style={{ height: 48 }} />
-                          <div style={{ fontWeight: 900, opacity: 0.78 }}>I’m working on</div>
-                        </>
-                      ) : (
-                        <div style={{ fontWeight: 800, opacity: 0.55 }}>Set as current</div>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-
-              {/* Keep sage read visible even when no todo */}
-              {todo.length === 0 ? (
-                <div className="taskItem" style={{ marginTop: 10 }}>
-                  <div className="taskLeft" style={{ minHeight: 72 }} />
-                  <div
-                    style={{
-                      width: 190,
-                      height: 70,
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      gap: 10,
-                      borderRadius: 18,
-                      border: "1px dashed rgba(0,0,0,0.18)",
-                      background: "rgba(0,0,0,0.04)",
-                      padding: "0 12px"
-                    }}
-                  >
-                    <img src="/assets/sage_read.png" alt="sage reading" style={{ height: 48 }} />
-                    <div style={{ fontWeight: 900, opacity: 0.78 }}>I’m working on</div>
-                  </div>
+                        <button
+                          className={`sageDrop ${isSageHere ? "active" : ""}`}
+                          onClick={() => handleSetCurrent(t.id)}
+                          title="Set as current"
+                          type="button"
+                        >
+                          <img
+                            src="/assets/sage_read.png"
+                            alt="sage reading"
+                            className="sageReadIcon"
+                            draggable={false}
+                          />
+                          <span>{isSageHere ? "I’m working on" : "Set as current"}</span>
+                        </button>
+                      </div>
+                    );
+                  })}
                 </div>
-              ) : null}
+              )}
             </div>
           </div>
         </div>
 
-        {/* BOTTOM: DONE + WATERING + FLOW */}
-        <div className="panelBox" style={{ flex: "0 0 46%" }}>
-          <div className="row" style={{ alignItems: "center", justifyContent: "space-between" }}>
-            <div className="sectionTitle" style={{ fontSize: 34 }}>
+        {/* BOTTOM: DONE */}
+        <div className="panelBox" style={{ flex: 1, minHeight: 220 }}>
+          <div className="panelHeader" style={{ alignItems: "flex-end" }}>
+            <div className="sectionTitle" style={{ fontSize: 40 }}>
               Good job!
             </div>
 
-            {/* Flower + Can + Water drops + Sparkles */}
-            <div className="gardenWrap">
-              <img
-                className="gardenFlower"
-                src={`/assets/flow_${flowStage}.png`}
-                alt={`flower stage ${flowStage}`}
-                onError={(e) => {
-                  (e.currentTarget as HTMLImageElement).style.display = "none";
-                }}
-                draggable={false}
-              />
+            {/* Garden HUD (pot + can). Can must be ABOVE pot */}
+            <div className={`gardenHud ${watering ? "watering" : ""}`}>
+              {/* flower/pot stage */}
+              {flowerStage > 0 ? (
+                <img
+                  className="gardenPot"
+                  src={`/assets/flow_${Math.min(5, flowerStage)}.png`}
+                  alt="flower"
+                  draggable={false}
+                />
+              ) : (
+                <img
+                  className="gardenPot"
+                  src={`/assets/flow_1.png`}
+                  alt="flower"
+                  style={{ opacity: 0.35 }}
+                  draggable={false}
+                />
+              )}
 
-              <img
-                className={watering ? "gardenCan watering" : "gardenCan"}
-                src="/assets/watering_can.png"
-                alt="watering can"
-                onError={(e) => {
-                  (e.currentTarget as HTMLImageElement).style.display = "none";
-                }}
-                draggable={false}
-              />
+              {/* watering can ABOVE pot */}
+              <img className="gardenCan" src="/assets/water_can.png" alt="water can" draggable={false} />
 
-              {/* Water drops + sparkles only when watering */}
-              {watering ? (
-                <>
-                  <div className="waterDrops" aria-hidden="true">
-                    <span className="drop d1" />
-                    <span className="drop d2" />
-                    <span className="drop d3" />
-                    <span className="drop d4" />
-                    <span className="drop d5" />
-                  </div>
-                  <div className="sparkles" aria-hidden="true">
-                    <span className="sp s1" />
-                    <span className="sp s2" />
-                    <span className="sp s3" />
-                  </div>
-                </>
-              ) : null}
+              {/* droplets/sparkle overlay */}
+              {watering && (
+                <div className="waterFX" aria-hidden>
+                  <span className="drop d1" />
+                  <span className="drop d2" />
+                  <span className="drop d3" />
+                  <span className="spark s1" />
+                  <span className="spark s2" />
+                </div>
+              )}
             </div>
           </div>
 
           <div className="divider" />
 
-          {/* Drag source: only when stage==5 */}
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
-            <div className="mini" style={{ fontSize: 14, fontWeight: 800, opacity: 0.75 }}>
-              {canDragFlower
-                ? "Your flower is ready — drag it to the sage on the right to plant."
-                : `Watering progress: ${waterCount} (every 3 grows a new flower)`}
-            </div>
-
-            {canDragFlower ? (
-              <img
-                src="/assets/flow_5.png"
-                alt="draggable flower"
-                draggable
-                onDragStart={onFlowerDragStart}
-                style={{ height: 58, cursor: "grab", objectFit: "contain" }}
-              />
-            ) : null}
-          </div>
-
-          <div className="panelScroll" style={{ height: "calc(100% - 128px)" }}>
-            <div className="list" style={{ marginTop: 6 }}>
+          <div className="panelScroll" style={{ height: "calc(100% - 82px)" }}>
+            <div className="list">
               {done.map((t) => (
                 <div className="taskItem" key={t.id}>
                   <div className="taskLeft">
                     <button className="iconBtn" onClick={() => handleToggle(t.id)} title="Completed">
-                      <img src="/assets/clover_gold.png" alt="gold clover" />
+                      <img src="/assets/clover_gold.png" alt="clover gold" draggable={false} />
                     </button>
-
                     <div className="taskText" style={{ opacity: 0.78 }}>
                       {t.text}
                     </div>
                   </div>
-
-                  <div style={{ width: 190, height: 70 }} />
+                  <div style={{ width: 82, height: 54 }} />
                 </div>
               ))}
             </div>
+
+            {/* Optional helper text when flower is ready */}
+            {flowerReady && (
+              <div style={{ marginTop: 14, color: "rgba(0,0,0,0.55)", fontWeight: 800 }}>
+                Your flower is ready — drag it to the sage on the right to plant.
+              </div>
+            )}
+
+            {/* Draggable flower icon (small, same as left size) */}
+            {flowerReady && (
+              <div style={{ marginTop: 10, display: "flex", justifyContent: "flex-end" }}>
+                <img
+                  src="/assets/flow_5.png"
+                  alt="ready flower"
+                  draggable
+                  className="readyFlower"
+                  onDragStart={(e) => {
+                    e.dataTransfer.setData("text/plain", "flower_ready");
+                  }}
+                />
+              </div>
+            )}
           </div>
         </div>
       </div>
