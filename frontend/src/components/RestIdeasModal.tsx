@@ -1,26 +1,26 @@
 import React, { useMemo, useState } from "react";
 
-const DEFAULT_REST_IDEAS: string[] = [
-  "Stand up and stretch your shoulders + neck.",
-  "Drink water — a full glass.",
-  "Do 10 slow deep breaths (4s in, 6s out).",
-  "Look outside / far away for 30 seconds (eye reset).",
-  "Tidy one tiny area: desk corner or one drawer.",
-  "Write 1 sentence: what’s the next smallest step?",
-  "Walk to another room and back (no phone).",
-  "Quick wrist + hand stretches.",
-  "Put on a song and just listen (no scrolling).",
-  "Wash your face / apply lip balm.",
-  "Refill your water bottle.",
-  "Do 10 bodyweight squats or calf raises.",
-  "Open a window (or step outside) for fresh air.",
-  "Send a kind message to someone (one line).",
-  "Check posture: feet flat, shoulders relaxed, jaw unclenched.",
-  "5-minute brain dump: list anything on your mind.",
-  "Make the workspace ‘ready’ for the next work block.",
-  "Do 1-minute mindfulness: notice 5 things you see.",
-  "Prepare the next task materials (open docs, tabs).",
-  "Quick gratitude: write 3 small wins today."
+export const DEFAULT_REST_IDEAS: string[] = [
+  "Pick a color and find 10 things that match it around you.",
+  "Do a 60-second ‘silent walk’ — no phone, just walk and breathe.",
+  "Make a tiny ‘victory list’: write 3 things you already did today.",
+  "Roll your shoulders 10x + neck circles 5x each side.",
+  "Hydration quest: drink a full glass, then refill your bottle.",
+  "Desk reset: clear exactly 10 items (stop at 10).",
+  "Eye spa: look at something far away for 30s, then blink slowly 10x.",
+  "Do 20 jumping jacks OR 10 squats OR 30s wall sit (pick one).",
+  "Set a 5-min ‘mini tidy’: only the surface you can touch while seated.",
+  "Make the next work block easy: open the exact doc + tabs you need.",
+  "Write one sentence: ‘When I return, I will…’ (the next smallest step).",
+  "‘Posture check’: feet flat, shoulders down, jaw unclenched, exhale.",
+  "Quick hand care: stretch fingers, rotate wrists, shake hands loose.",
+  "Random kindness: send a 1-line message to someone you like.",
+  "Breathing game: 4 seconds in, 6 seconds out × 8 rounds.",
+  "Snack prep: wash a fruit / make tea (only if it’s actually quick).",
+  "Music reset: play one song, just listen (no scrolling).",
+  "5-minute brain dump: write everything on your mind, no judging.",
+  "Micro-meditation: notice 5 things you see, 4 feel, 3 hear, 2 smell, 1 taste.",
+  "Stand up and do a ‘reach the ceiling’ stretch for 20 seconds × 2."
 ];
 
 function randPick<T>(arr: T[]) {
@@ -30,17 +30,20 @@ function randPick<T>(arr: T[]) {
 export default function RestIdeasModal({
   open,
   onClose,
-  ideas = DEFAULT_REST_IDEAS
+  ideas = DEFAULT_REST_IDEAS,
+  tomatoSrc,
+  onRollTomato
 }: {
   open: boolean;
   onClose: () => void;
   ideas?: string[];
+  tomatoSrc: string;
+  onRollTomato: () => void;
 }) {
   const [idea, setIdea] = useState<string>("");
 
   const firstIdea = useMemo(() => randPick(ideas), [ideas]);
 
-  // When opened first time, show a default suggestion (nice UX)
   React.useEffect(() => {
     if (open) setIdea(firstIdea);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -48,6 +51,7 @@ export default function RestIdeasModal({
 
   const onRoll = () => {
     setIdea(randPick(ideas));
+    onRollTomato(); // ✅骰子同时换番茄
   };
 
   if (!open) return null;
@@ -62,7 +66,7 @@ export default function RestIdeasModal({
         <div className="modalHeader">
           <div className="modalTomato">
             <img
-              src="/assets/rest_1.png"
+              src={tomatoSrc}
               alt="rest tomato"
               onError={(e) => {
                 (e.currentTarget as HTMLImageElement).style.display = "none";
@@ -83,7 +87,6 @@ export default function RestIdeasModal({
               src="/assets/dice.png"
               alt="dice"
               onError={(e) => {
-                // fallback if user hasn't uploaded dice yet
                 (e.currentTarget as HTMLImageElement).style.display = "none";
               }}
             />
