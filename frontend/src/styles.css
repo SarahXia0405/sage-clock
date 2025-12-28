@@ -324,4 +324,13 @@ body{
   border: 1px solid rgba(0,0,0,0.12);
 }
 
+/* Overlay analog clock on the clock sage is holding */
+.sageHeldClock{
+  position: absolute;
+  /* 先给一个默认值，按你图一大概位置；你可以微调这两个 */
+  left: 270px;
+  top: 270px;
+  z-index: 5;
+  pointer-events: none;
+}
 
