@@ -133,21 +133,12 @@ export default function RightTimerPanel({
           Scene · Real-time clock is shown on sage’s clock
         </div>
       
-        {/* stage: clock overlays relative to the image box */}
         <div className="sceneStage">
-          <img
-            className="sceneImg"
-            src="/assets/scene_sage.png"
-            alt="scene"
-            onError={(e) => {
-              (e.currentTarget as HTMLImageElement).style.display = "none";
-            }}
-          />
+          <img className="sceneImg" src="/assets/scene_sage.png" alt="scene" />
       
           <AnalogClock className="sageHeldClock" size={104} />
         </div>
       </div>
-      
     </div>
   );
 }
