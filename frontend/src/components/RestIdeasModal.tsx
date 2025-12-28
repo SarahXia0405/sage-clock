@@ -45,13 +45,16 @@ export default function RestIdeasModal({
   tomatoSrc: string;
   onRequestNewTomato?: () => void;
 }) {
-  // ✅ user ideas（存 localStorage，避免刷新丢）
   const [userIdeas, setUserIdeas] = useState<string[]>([]);
+  const [idea, setIdea] = useState(() => pickRandom(DEFAULT_REST_IDEAS));
+  const [casting, setCasting] = useState(false);
+
+  // ✅ 二级弹窗开关 & 输入值
+  const [ideaModalOpen, setIdeaModalOpen] = useState(false);
   const [input, setInput] = useState("");
 
-  // ✅ 合并随机池：默认 + 用户
+  // 合并随机池：默认 + 用户（去重）
   const ideaPool = useMemo(() => {
-    // 过滤空、去重（大小写不敏感）
     const seen = new Set<string>();
     const merged: string[] = [];
     const add = (s: string) => {
@@ -67,12 +70,6 @@ export default function RestIdeasModal({
     return merged;
   }, [userIdeas]);
 
-  const [idea, setIdea] = useState(() => pickRandom(DEFAULT_REST_IDEAS));
-
-  // ✅ “施法”状态（替代 diceShake）
-  const [casting, setCasting] = useState(false);
-
-  // 载入 user ideas
   useEffect(() => {
     try {
       const raw = localStorage.getItem(USER_IDEAS_KEY);
@@ -94,7 +91,6 @@ export default function RestIdeasModal({
     }
   };
 
-  // 每次打开：初始化随机 idea + 可触发换番茄
   useEffect(() => {
     if (!open) return;
     setIdea(pickRandom(ideaPool.length ? ideaPool : DEFAULT_REST_IDEAS));
@@ -105,12 +101,22 @@ export default function RestIdeasModal({
   const castSpell = () => {
     if (casting) return;
     setCasting(true);
-
     window.setTimeout(() => {
       setIdea(pickRandom(ideaPool.length ? ideaPool : DEFAULT_REST_IDEAS));
       setCasting(false);
     }, 520);
   };
+
+  const openIdeaModal = () => {
+    setIdeaModalOpen(true);
+    // 可选：打开时自动 focus 输入框（用 requestAnimationFrame 简化）
+    window.requestAnimationFrame(() => {
+      const el = document.getElementById("userIdeaModalInput") as HTMLInputElement | null;
+      el?.focus();
+    });
+  };
+
+  const closeIdeaModal = () => setIdeaModalOpen(false);
 
   const onAdd = () => {
     const v = input.trim();
@@ -124,6 +130,7 @@ export default function RestIdeasModal({
 
     persistUserIdeas([v, ...userIdeas]);
     setInput("");
+    setIdeaModalOpen(false); // ✅ 添加成功后关闭二级弹窗（符合“弹出窗口”交互）
   };
 
   const onClear = () => {
@@ -133,6 +140,7 @@ export default function RestIdeasModal({
 
   const onInputKeyDown: React.KeyboardEventHandler<HTMLInputElement> = (e) => {
     if (e.key === "Enter") onAdd();
+    if (e.key === "Escape") closeIdeaModal();
   };
 
   if (!open) return null;
@@ -149,7 +157,7 @@ export default function RestIdeasModal({
           <div className="restModalTitle">Things to do during rest</div>
         </div>
 
-        {/* ✅ 上半区：左 idea 框（高度= sage） + 右 sage 施法按钮 */}
+        {/* 上半区：idea + sage */}
         <div className="restModalBodyV2">
           <div className="restIdeaBoxV2" aria-live="polite">
             {idea}
@@ -167,8 +175,6 @@ export default function RestIdeasModal({
               alt="sage"
               draggable={false}
             />
-
-            {/* ✅ 光点效果：施法时显示 */}
             <span className={casting ? "sparkles sparklesOn" : "sparkles"} aria-hidden="true">
               <i className="sp sp1" />
               <i className="sp sp2" />
@@ -182,26 +188,75 @@ export default function RestIdeasModal({
           </button>
         </div>
 
-        {/* ✅ 左下角：User idea（图三），加入随机池 */}
-        <div className="userIdeaRow">
-          <input
-            className="userIdeaInput"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={onInputKeyDown}
-            placeholder="Have your own idea?"
-            aria-label="Your rest idea"
-          />
+        {/* ✅ 底部触发区（不直接输入，改为“点击弹窗”） */}
+        <div className="userIdeaTriggerRow">
+          {/* 点击这里也会弹窗 */}
+          <button
+            type="button"
+            className="userIdeaTrigger"
+            onClick={openIdeaModal}
+            aria-label="Have your own idea"
+          >
+            <span className="ideaEmoji" aria-hidden="true">💡</span>
+            <span className="userIdeaTriggerText">Have your own idea?</span>
+          </button>
 
-          <div className="userIdeaActions">
-            <button type="button" className="userIdeaBtn" onClick={onClear}>
-              CLEAR
-            </button>
-            <button type="button" className="userIdeaBtn" onClick={onAdd}>
-              ADD
-            </button>
-          </div>
+          {/* 可选：右侧再给一个明显的 emoji/icon 按钮 */}
+          <button
+            type="button"
+            className="ideaEmojiBtn"
+            onClick={openIdeaModal}
+            aria-label="Open idea modal"
+          >
+            💡
+          </button>
         </div>
+
+        {/* ✅ 二级弹窗 */}
+        {ideaModalOpen && (
+          <div className="ideaModalOverlay" onMouseDown={closeIdeaModal}>
+            <div className="ideaModalCard" onMouseDown={(e) => e.stopPropagation()}>
+              <button className="ideaModalClose" onClick={closeIdeaModal} aria-label="Close">
+                ×
+              </button>
+
+              <div className="ideaModalHeader">
+                <img
+                  className="ideaModalIcon"
+                  src="/assets/sage_idea.png"
+                  alt="sage idea"
+                  draggable={false}
+                />
+              </div>
+
+              <div className="ideaModalBody">
+                <input
+                  id="userIdeaModalInput"
+                  className="userIdeaInput"
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  onKeyDown={onInputKeyDown}
+                  placeholder="Type your rest idea…"
+                  aria-label="Your rest idea"
+                />
+
+                <div className="userIdeaActions">
+                  <button type="button" className="userIdeaBtn" onClick={onClear}>
+                    CLEAR
+                  </button>
+                  <button type="button" className="userIdeaBtn" onClick={onAdd}>
+                    ADD
+                  </button>
+                </div>
+
+                {/* 可选提示：目前有多少条用户 idea */}
+                <div className="userIdeaHint" aria-hidden="true">
+                  Your ideas: {userIdeas.length}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
