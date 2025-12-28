@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from "react";
 import type { AppState } from "../types";
 import { timerControl, timerSet } from "../api";
-import ClockNow from "./ClockNow";
+import AnalogClock from "./AnalogClock";
 
 function fmt(sec: number) {
   const s = Math.max(0, Math.floor(sec));
@@ -25,7 +25,7 @@ export default function RightTimerPanel({
   const [workMin, setWorkMin] = useState(25);
   const [restMin, setRestMin] = useState(5);
 
-  // ✅ session-based random tomato frame:
+  // session-based random tomato frame:
   // work: 1..6, rest: 1..5
   const [workFrame, setWorkFrame] = useState<number>(() => randInt(1, 6));
   const [restFrame, setRestFrame] = useState<number>(() => randInt(1, 5));
@@ -48,11 +48,11 @@ export default function RightTimerPanel({
   const onApply = async () => {
     // set work duration on backend
     await timerSet("work", workMin, bindTask);
-    // restMin we keep in UI for now; when switching to rest, you can later store it in backend too
+    // NOTE: restMin still only UI for now (can add backend support later)
   };
 
   const onStart = async () => {
-    // ✅ randomize once per Start
+    // randomize once per Start
     setWorkFrame(randInt(1, 6));
     setRestFrame(randInt(1, 5));
     await timerControl("start");
@@ -80,7 +80,13 @@ export default function RightTimerPanel({
             value={workMin}
             min={1}
             onChange={(e) => setWorkMin(Number(e.target.value))}
-            style={{ width: 80, height: 40, borderRadius: 12, border: "1px solid rgba(0,0,0,0.12)", padding: "0 10px" }}
+            style={{
+              width: 80,
+              height: 40,
+              borderRadius: 12,
+              border: "1px solid rgba(0,0,0,0.12)",
+              padding: "0 10px"
+            }}
           />
           <span className="mini">min</span>
         </div>
@@ -92,7 +98,13 @@ export default function RightTimerPanel({
             value={restMin}
             min={1}
             onChange={(e) => setRestMin(Number(e.target.value))}
-            style={{ width: 80, height: 40, borderRadius: 12, border: "1px solid rgba(0,0,0,0.12)", padding: "0 10px" }}
+            style={{
+              width: 80,
+              height: 40,
+              borderRadius: 12,
+              border: "1px solid rgba(0,0,0,0.12)",
+              padding: "0 10px"
+            }}
           />
           <span className="mini">min</span>
         </div>
@@ -119,7 +131,7 @@ export default function RightTimerPanel({
 
       <div className="scene">
         <div className="mini" style={{ marginBottom: 8 }}>
-          Scene · Real-time clock is shown in bottom-right
+          Scene · Real-time clock is shown on sage’s clock
         </div>
 
         <img
@@ -130,7 +142,8 @@ export default function RightTimerPanel({
           }}
         />
 
-        <ClockNow />
+        {/* ✅ overlay analog clock on the held clock position */}
+        <AnalogClock className="sageHeldClock" size={104} />
       </div>
     </div>
   );
