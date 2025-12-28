@@ -280,7 +280,7 @@ body{
 /* watering row (pot + can) */
 .growRow{
   position: relative;              /* ✅ 关键：让内部绝对定位都以它为参照 */
-  height: 92px;                    /* 给花盆+水壶一个固定舞台 */
+  height: 100px;                    /* 给花盆+水壶一个固定舞台 */
   display: flex;
   align-items: center;
   justify-content: flex-start;     /* ✅ 让整组默认靠左，跟 Good job 对齐 */
@@ -291,7 +291,7 @@ body{
 /* 花盆：作为“锚点”放左侧 */
 .flowerPot{
   position: relative;             /* ✅ 不再 absolute 漂移 */
-  height: 55px;
+  height: 65px;
   width: auto;
   z-index: 2;
   user-select: none;
@@ -302,7 +302,7 @@ body{
 .waterCan{
   position: absolute;
   left: 44px;                     /* ✅ 对准花盆中心的像素锚点（微调这一行即可） */
-  top: -8px;                      /* ✅ 在花盆上方 */
+  top: -18px;                      /* ✅ 在花盆上方 */
   height: 92px;                   /* ✅ 更大 */
   width: auto;
   z-index: 6;
