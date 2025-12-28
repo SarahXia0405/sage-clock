@@ -3,6 +3,7 @@ import { fetchState } from "./api";
 import type { AppState, Progress } from "./types";
 import LeftTodoPanel from "./components/LeftTodoPanel";
 import RightTimerPanel from "./components/RightTimerPanel";
+import AlarmSound from "./components/AlarmSound";
 
 function clamp(n: number, a: number, b: number) {
   return Math.max(a, Math.min(b, n));
@@ -17,6 +18,15 @@ export default function App() {
   const draggingRef = useRef(false);
   const pageRef = useRef<HTMLDivElement | null>(null);
 
+  // ===== Alarm src (session-local) =====
+  const DEFAULT_ALARM = "/assets/alarm.mp3";
+  const [alarmSrc, setAlarmSrc] = useState<string>(DEFAULT_ALARM);
+  const prevBlobUrlRef = useRef<string | null>(null);
+
+  // trigger key for AlarmSound
+  const [alarmKey, setAlarmKey] = useState(0);
+  const lastRemainingRef = useRef<number | null>(null);
+
   // poll state for timer + UI sync
   useEffect(() => {
     let alive = true;
@@ -25,6 +35,16 @@ export default function App() {
       try {
         const res = await fetchState();
         if (!alive) return;
+
+        // detect "hit 0" edge: >0 -> 0
+        const nextRemaining = res.state?.timer?.remaining_sec ?? 0;
+        const prevRemaining = lastRemainingRef.current;
+
+        if (prevRemaining !== null && prevRemaining > 0 && nextRemaining <= 0) {
+          setAlarmKey((k) => k + 1);
+        }
+        lastRemainingRef.current = nextRemaining;
+
         setState(res.state);
         setProgress(res.progress);
       } catch (e) {
@@ -39,6 +59,39 @@ export default function App() {
       clearInterval(t);
     };
   }, []);
+
+  // cleanup blob URL on unmount / src change
+  useEffect(() => {
+    // if current src is a blob: URL, track it; if src switches away, revoke old blob
+    const isBlob = alarmSrc.startsWith("blob:");
+    if (isBlob) {
+      // revoke previous blob if it exists and differs
+      if (prevBlobUrlRef.current && prevBlobUrlRef.current !== alarmSrc) {
+        try {
+          URL.revokeObjectURL(prevBlobUrlRef.current);
+        } catch {}
+      }
+      prevBlobUrlRef.current = alarmSrc;
+    } else {
+      // switching to default/non-blob: revoke any previous blob
+      if (prevBlobUrlRef.current) {
+        try {
+          URL.revokeObjectURL(prevBlobUrlRef.current);
+        } catch {}
+        prevBlobUrlRef.current = null;
+      }
+    }
+
+    return () => {
+      // on unmount: revoke last blob
+      if (prevBlobUrlRef.current) {
+        try {
+          URL.revokeObjectURL(prevBlobUrlRef.current);
+        } catch {}
+        prevBlobUrlRef.current = null;
+      }
+    };
+  }, [alarmSrc]);
 
   // ===== Drag handlers for resizer =====
   useEffect(() => {
@@ -81,6 +134,9 @@ export default function App() {
 
   return (
     <div className="page" ref={pageRef}>
+      {/* hidden audio player */}
+      <AlarmSound src={alarmSrc} playKey={alarmKey} />
+
       <div className="left" style={{ flexBasis: `${leftPct}%` }}>
         <LeftTodoPanel
           state={state}
@@ -101,7 +157,14 @@ export default function App() {
       />
 
       <div className="right" style={{ flexBasis: `${100 - leftPct}%` }}>
-        <RightTimerPanel state={state} onState={setState} />
+        <RightTimerPanel
+          state={state}
+          onState={setState}
+          alarmSrc={alarmSrc}
+          onAlarmSrc={setAlarmSrc}
+          defaultAlarmSrc={DEFAULT_ALARM}
+          onTestAlarm={() => setAlarmKey((k) => k + 1)}
+        />
       </div>
     </div>
   );
