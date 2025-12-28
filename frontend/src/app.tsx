@@ -1,5 +1,5 @@
+// frontend/src/app.tsx
 import React, { useEffect, useRef, useState } from "react";
-import { fetchState } from "./api";
 import type { AppState, Progress } from "./types";
 import LeftTodoPanel from "./components/LeftTodoPanel";
 import RightTimerPanel from "./components/RightTimerPanel";
@@ -9,9 +9,46 @@ function clamp(n: number, a: number, b: number) {
   return Math.max(a, Math.min(b, n));
 }
 
+/**
+ * ✅ Pure-frontend default state
+ * - Removes dependency on /api/state for Vercel static hosting
+ * - Panels can still update state locally via onState()
+ *
+ * If your types differ slightly, adjust fields to match ./types.ts
+ */
+function makeDefaultState(): AppState {
+  const now = Date.now();
+
+  return {
+    // @ts-expect-error: If your AppState has additional required fields,
+    // fill them in here according to ./types.ts
+    timer: {
+      mode: "work",
+      running: false,
+      remaining_sec: 25 * 60,
+      duration_sec: 25 * 60,
+      started_at_ms: null,
+      updated_at_ms: now
+    },
+    // @ts-expect-error: If your state schema differs, adapt to your actual shape
+    tasks: [],
+    // @ts-expect-error
+    flowers: [],
+    // @ts-expect-error
+    meta: {
+      created_at_ms: now
+    }
+  };
+}
+
+function makeDefaultProgress(): Progress {
+  return { total: 0, done: 0, pct: 0 };
+}
+
 export default function App() {
-  const [state, setState] = useState<AppState | null>(null);
-  const [progress, setProgress] = useState<Progress>({ total: 0, done: 0, pct: 0 });
+  // ✅ No longer null: do not block UI behind Loading...
+  const [state, setState] = useState<AppState>(() => makeDefaultState());
+  const [progress, setProgress] = useState<Progress>(() => makeDefaultProgress());
 
   // ===== Split sizing (percentage) =====
   const [leftPct, setLeftPct] = useState(58); // default 58%
@@ -27,45 +64,24 @@ export default function App() {
   const [alarmKey, setAlarmKey] = useState(0);
   const lastRemainingRef = useRef<number | null>(null);
 
-  // poll state for timer + UI sync
+  /**
+   * ✅ Alarm edge detection stays purely local:
+   * Panels update state.timer.remaining_sec; we detect >0 -> 0 transitions.
+   */
   useEffect(() => {
-    let alive = true;
+    const nextRemaining = state?.timer?.remaining_sec ?? 0;
+    const prevRemaining = lastRemainingRef.current;
 
-    const load = async () => {
-      try {
-        const res = await fetchState();
-        if (!alive) return;
-
-        // detect "hit 0" edge: >0 -> 0
-        const nextRemaining = res.state?.timer?.remaining_sec ?? 0;
-        const prevRemaining = lastRemainingRef.current;
-
-        if (prevRemaining !== null && prevRemaining > 0 && nextRemaining <= 0) {
-          setAlarmKey((k) => k + 1);
-        }
-        lastRemainingRef.current = nextRemaining;
-
-        setState(res.state);
-        setProgress(res.progress);
-      } catch (e) {
-        // ignore transient
-      }
-    };
-
-    load();
-    const t = setInterval(load, 1000);
-    return () => {
-      alive = false;
-      clearInterval(t);
-    };
-  }, []);
+    if (prevRemaining !== null && prevRemaining > 0 && nextRemaining <= 0) {
+      setAlarmKey((k) => k + 1);
+    }
+    lastRemainingRef.current = nextRemaining;
+  }, [state?.timer?.remaining_sec]);
 
   // cleanup blob URL on unmount / src change
   useEffect(() => {
-    // if current src is a blob: URL, track it; if src switches away, revoke old blob
     const isBlob = alarmSrc.startsWith("blob:");
     if (isBlob) {
-      // revoke previous blob if it exists and differs
       if (prevBlobUrlRef.current && prevBlobUrlRef.current !== alarmSrc) {
         try {
           URL.revokeObjectURL(prevBlobUrlRef.current);
@@ -73,7 +89,6 @@ export default function App() {
       }
       prevBlobUrlRef.current = alarmSrc;
     } else {
-      // switching to default/non-blob: revoke any previous blob
       if (prevBlobUrlRef.current) {
         try {
           URL.revokeObjectURL(prevBlobUrlRef.current);
@@ -83,7 +98,6 @@ export default function App() {
     }
 
     return () => {
-      // on unmount: revoke last blob
       if (prevBlobUrlRef.current) {
         try {
           URL.revokeObjectURL(prevBlobUrlRef.current);
@@ -103,8 +117,6 @@ export default function App() {
       const rect = page.getBoundingClientRect();
       const x = e.clientX - rect.left;
       const pct = (x / rect.width) * 100;
-
-      // keep both sides usable
       setLeftPct(clamp(pct, 35, 75));
     };
 
@@ -127,10 +139,6 @@ export default function App() {
     document.body.style.cursor = "col-resize";
     document.body.style.userSelect = "none";
   };
-
-  if (!state) {
-    return <div style={{ padding: 18 }}>Loading…</div>;
-  }
 
   return (
     <div className="page" ref={pageRef}>
