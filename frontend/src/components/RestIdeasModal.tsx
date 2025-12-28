@@ -17,9 +17,7 @@ const DEFAULT_REST_IDEAS: string[] = [
   "Mindfulness: 5 see / 4 feel / 3 hear / 2 smell / 1 taste.",
   "Stretch hands: finger pulls + wrist circles 30s each.",
   "Quick tidy: only the space within arm’s reach.",
-  "Compliment yourself: write one line you’d tell a friend.",
   "Fresh air: open window or stand outside for 1 minute.",
-  "Make tea / wash fruit (only if it stays under 5 min).",
   "Posture check: feet flat, jaw unclench, long exhale."
 ];
 
@@ -54,7 +52,6 @@ export default function RestIdeasModal({
 
   useEffect(() => {
     if (!open) return;
-
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
     };
@@ -66,7 +63,6 @@ export default function RestIdeasModal({
     if (rolling) return;
     setRolling(true);
 
-    // 短动画结束后再出结果
     window.setTimeout(() => {
       setIdea(randPick(ideas));
       onRequestNewTomato();
@@ -101,14 +97,7 @@ export default function RestIdeasModal({
           </div>
 
           <button className={`diceBtn ${rolling ? "rolling" : ""}`} onClick={roll} title="Roll">
-            <img
-              src="/assets/dice.png"
-              alt="dice"
-              onError={(e) => {
-                (e.currentTarget as HTMLImageElement).style.display = "none";
-              }}
-            />
-            <span className="diceFallback">🎲</span>
+            <span className="diceEmoji" aria-hidden="true">🎲</span>
           </button>
         </div>
       </div>
