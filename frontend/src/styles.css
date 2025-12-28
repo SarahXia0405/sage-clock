@@ -851,3 +851,9 @@ body{
   font-size: 14px;
   margin-top: -6px;
 }
+/* ✅ Make idea box never scroll (prevents "auto scroll" feel) */
+.restIdeaBoxV2{
+  overflow: hidden !important;
+  white-space: normal;
+  word-break: break-word;
+}
