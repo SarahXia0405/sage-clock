@@ -248,3 +248,39 @@ body{
   color:#111;
   border: 1px solid rgba(0,0,0,0.12);
 }
+
+/* Left panel layout: top(todo) + bottom(done) fixed ratio and scrollable */
+.leftSplit{
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  height: calc(100vh - 36px); /* left padding 18*2 */
+}
+
+.panelBox{
+  background: rgba(255,255,255,0.0);
+  border-radius: var(--radius);
+}
+
+.panelHeader{
+  display:flex;
+  align-items:center;
+  justify-content: space-between;
+}
+
+.panelScroll{
+  overflow-y: auto;
+  padding-right: 6px; /* avoid scrollbar overlaying content */
+}
+
+/* optional nicer scrollbars (works in webkit) */
+.panelScroll::-webkit-scrollbar{
+  width: 8px;
+}
+.panelScroll::-webkit-scrollbar-thumb{
+  background: rgba(0,0,0,0.18);
+  border-radius: 999px;
+}
+.panelScroll::-webkit-scrollbar-track{
+  background: transparent;
+}
