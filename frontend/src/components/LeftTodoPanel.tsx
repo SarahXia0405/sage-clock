@@ -75,14 +75,30 @@ export default function LeftTodoPanel({
     await toggleDone(id);
   };
 
-  const handleDropSage = async (taskId: string) => {
+  const handleSetCurrent = async (taskId: string) => {
     await setSage(taskId);
   };
 
   return (
-    <div className="leftSplit">
-      {/* ===== TOP: To-Do (fixed header + scroll list) ===== */}
-      <div className="panelBox" style={{ flex: 6, minHeight: 0 }}>
+    <div
+      className="leftSplit"
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        gap: 14,
+        height: "calc(100vh - 36px)"
+      }}
+    >
+      {/* ===== TOP: To-Do ===== */}
+      <div
+        className="panelBox"
+        style={{
+          flex: 6,
+          minHeight: 0,
+          display: "flex",
+          flexDirection: "column"
+        }}
+      >
         <div className="panelHeader">
           <div className="sectionTitle">To-Do List</div>
         </div>
@@ -113,7 +129,7 @@ export default function LeftTodoPanel({
           <div className="progressPct">{progress.pct}%</div>
         </div>
 
-        {/* Add task */}
+        {/* Add task (fixed) */}
         <div className="todoBox" style={{ marginTop: 12 }}>
           <div className="row" style={{ gap: 10 }}>
             <input
@@ -129,14 +145,27 @@ export default function LeftTodoPanel({
                 fontSize: 16
               }}
             />
-            <button className="btn" onClick={onAdd} style={{ height: 56, borderRadius: 16 }}>
+            <button
+              className="btn"
+              onClick={onAdd}
+              style={{ height: 56, borderRadius: 16 }}
+            >
               Add
             </button>
           </div>
         </div>
 
-        {/* Scrollable ToDo list */}
-        <div className="panelScroll" style={{ marginTop: 12 }}>
+        {/* Scrollable TODO list */}
+        <div
+          className="panelScroll"
+          style={{
+            marginTop: 12,
+            flex: 1,
+            minHeight: 0,
+            overflowY: "auto",
+            paddingRight: 6
+          }}
+        >
           <div className="list">
             {todo.map((t) => {
               const isSageHere = effectiveSageTaskId === t.id;
@@ -155,19 +184,22 @@ export default function LeftTodoPanel({
                     <div className="taskText">{t.text}</div>
                   </div>
 
-                  {/* “read sage” zone */}
+                  {/* current-task selector (click or drop) */}
                   <div
                     onDragOver={(e) => e.preventDefault()}
-                    onDrop={() => handleDropSage(t.id)}
+                    onDrop={() => handleSetCurrent(t.id)}
+                    onClick={() => handleSetCurrent(t.id)}
                     style={{
-                      width: 170,
-                      height: 64,
+                      width: 190,
+                      height: 68,
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
                       borderRadius: 16,
                       border: "1px dashed rgba(0,0,0,0.18)",
-                      background: isSageHere ? "rgba(0,0,0,0.04)" : "transparent"
+                      background: isSageHere ? "rgba(0,0,0,0.04)" : "transparent",
+                      cursor: "pointer",
+                      userSelect: "none"
                     }}
                     title="Set current task"
                   >
@@ -210,8 +242,8 @@ export default function LeftTodoPanel({
 
                 <div
                   style={{
-                    width: 170,
-                    height: 64,
+                    width: 190,
+                    height: 68,
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
@@ -243,8 +275,16 @@ export default function LeftTodoPanel({
         </div>
       </div>
 
-      {/* ===== BOTTOM: Done (scroll list) ===== */}
-      <div className="panelBox" style={{ flex: 4, minHeight: 0 }}>
+      {/* ===== BOTTOM: Done ===== */}
+      <div
+        className="panelBox"
+        style={{
+          flex: 4,
+          minHeight: 0,
+          display: "flex",
+          flexDirection: "column"
+        }}
+      >
         <div className="panelHeader">
           <div className="sectionTitle" style={{ fontSize: 28 }}>
             Good job
@@ -253,12 +293,24 @@ export default function LeftTodoPanel({
 
         <div className="divider" />
 
-        <div className="panelScroll">
+        <div
+          className="panelScroll"
+          style={{
+            flex: 1,
+            minHeight: 0,
+            overflowY: "auto",
+            paddingRight: 6
+          }}
+        >
           <div className="list" style={{ marginTop: 6 }}>
             {done.map((t) => (
               <div className="taskItem" key={t.id}>
                 <div className="taskLeft">
-                  <button className="iconBtn" onClick={() => handleToggle(t.id)} title="Completed">
+                  <button
+                    className="iconBtn"
+                    onClick={() => handleToggle(t.id)}
+                    title="Completed"
+                  >
                     <img src="/assets/clover_gold.png" alt="gold clover" />
                   </button>
 
@@ -268,7 +320,7 @@ export default function LeftTodoPanel({
                 </div>
 
                 {/* placeholder for flower drag target later */}
-                <div style={{ width: 96, height: 64 }} />
+                <div style={{ width: 190, height: 68 }} />
               </div>
             ))}
           </div>
