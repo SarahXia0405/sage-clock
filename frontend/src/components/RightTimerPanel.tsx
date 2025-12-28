@@ -1,8 +1,7 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import type { AppState } from "../types";
 import { timerControl, timerSet } from "../api";
 import AnalogClock from "./AnalogClock";
-import RestIdeasModal from "./RestIdeasModal";
 
 function fmt(sec: number) {
   const s = Math.max(0, Math.floor(sec));
@@ -15,6 +14,8 @@ function randInt(min: number, max: number) {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
+const LS_PLANTED_RIGHT = "potato_clock_planted_right_v1";
+
 export default function RightTimerPanel({
   state,
   onState
@@ -25,17 +26,20 @@ export default function RightTimerPanel({
   const [workMin, setWorkMin] = useState(25);
   const [restMin, setRestMin] = useState(5);
 
-  // work: 1..6, rest: 1..5
   const [workFrame, setWorkFrame] = useState<number>(() => randInt(1, 6));
   const [restFrame, setRestFrame] = useState<number>(() => randInt(1, 5));
 
-  // ✅ modal state + modal tomato frame (1..5)
-  const [restModalOpen, setRestModalOpen] = useState(false);
-  const [modalRestFrame, setModalRestFrame] = useState<number>(() => randInt(1, 5));
+  // planted flower in right scene (persist)
+  const [planted, setPlanted] = useState<boolean>(() => {
+    return localStorage.getItem(LS_PLANTED_RIGHT) === "1";
+  });
+
+  useEffect(() => {
+    localStorage.setItem(LS_PLANTED_RIGHT, planted ? "1" : "0");
+  }, [planted]);
 
   const remaining = state.timer.remaining_sec;
-  const mode = state.timer.mode; // "work" | "rest"
-  const isRest = mode === "rest";
+  const mode = state.timer.mode;
 
   const digits = useMemo(() => {
     const [m, s] = fmt(remaining).split(":");
@@ -51,6 +55,7 @@ export default function RightTimerPanel({
 
   const onApply = async () => {
     await timerSet("work", workMin, bindTask);
+    // restMin still UI-only
   };
 
   const onStart = async () => {
@@ -59,10 +64,17 @@ export default function RightTimerPanel({
     await timerControl("start");
   };
 
-  const openRestModal = () => {
-    if (!isRest) return;
-    setModalRestFrame(randInt(1, 5)); // 每次打开随机一个番茄
-    setRestModalOpen(true);
+  const onSceneDragOver = (e: React.DragEvent) => {
+    // allow drop
+    e.preventDefault();
+  };
+
+  const onSceneDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    const payload = e.dataTransfer.getData("text/plain");
+    if (payload === "flower:ready") {
+      setPlanted(true);
+    }
   };
 
   return (
@@ -118,22 +130,14 @@ export default function RightTimerPanel({
       </div>
 
       <div style={{ marginTop: 14, display: "flex", alignItems: "center", gap: 16 }}>
-        {/* ✅ 不加背景：纯 img，可点区域就是图片本身 */}
         <img
           src={tomatoSrc}
           alt="tomato"
-          className={isRest ? "restTomatoClickable" : ""}
-          onClick={openRestModal}
-          style={{
-            width: 90,
-            height: 90,
-            objectFit: "contain",
-            cursor: isRest ? "pointer" : "default"
-          }}
+          style={{ width: 90, height: 90, objectFit: "contain", cursor: mode === "rest" ? "pointer" : "default" }}
           onError={(e) => {
             (e.currentTarget as HTMLImageElement).style.display = "none";
           }}
-          title={isRest ? "Click for a rest idea" : ""}
+          // 你后面要点番茄弹窗就在这里挂 onClick（仅 rest 时）
         />
 
         <div className="timerDigits">
@@ -146,17 +150,13 @@ export default function RightTimerPanel({
       </div>
 
       <div className="scene">
-          <img
-            className="sceneImg"
-            src="/assets/scene_sage.png"
-            alt="scene"
-            style={{
-              width: "100%",
-              height: "auto",
-              display: "block",
-              objectFit: "contain"
-            }}
-          />
+        <div className="mini" style={{ marginBottom: 8 }}>
+          Scene · Drop your flower onto the sage to plant
+        </div>
+
+        {/* Drop target is EXACTLY the red-box sage area */}
+        <div className="sceneStage" onDragOver={onSceneDragOver} onDrop={onSceneDrop}>
+          <img className="sceneImg" src="/assets/scene_sage.png" alt="scene" />
 
           <AnalogClock
             className="sageHeldClock"
@@ -170,16 +170,18 @@ export default function RightTimerPanel({
               pointerEvents: "none"
             }}
           />
+
+          {/* Planted flower on sage's right side */}
+          {planted ? (
+            <img
+              src="/assets/flow_5.png"
+              alt="planted flower"
+              className="plantedFlower"
+              draggable={false}
+            />
+          ) : null}
         </div>
       </div>
-
-      {/* ✅ 真正弹窗：居中覆盖 */}
-      <RestIdeasModal
-        open={restModalOpen}
-        onClose={() => setRestModalOpen(false)}
-        tomatoSrc={`/assets/rest_${modalRestFrame}.png`}
-        onRequestNewTomato={() => setModalRestFrame(randInt(1, 5))}
-      />
     </div>
   );
 }
