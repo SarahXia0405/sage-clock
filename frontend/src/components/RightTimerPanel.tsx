@@ -142,7 +142,7 @@ export default function RightTimerPanel({
             style={{
               position: "absolute",
               left: "52%",
-              top: "68%",
+              top: "70%",
               transform: "translate(-50%, -50%)",
               zIndex: 10,
               pointerEvents: "none"
