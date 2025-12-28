@@ -196,7 +196,7 @@ export default function RightTimerPanel({
             onClick={onPickAlarm}
             className="btn secondary"
             style={{ padding: "8px 12px", borderRadius: 12 }}
-            title="Upload an alarm sound for this session"
+            title="Upload"
           >
             Upload alarm
           </button>
@@ -205,7 +205,7 @@ export default function RightTimerPanel({
             onClick={onTestAlarm}
             className="btn secondary"
             style={{ padding: "8px 12px", borderRadius: 12 }}
-            title="Test alarm"
+            title="Test"
           >
             Test
           </button>
@@ -214,7 +214,7 @@ export default function RightTimerPanel({
             onClick={onResetAlarm}
             className="btn secondary"
             style={{ padding: "8px 12px", borderRadius: 12 }}
-            title="Reset to default alarm"
+            title="Reset"
           >
             Reset
           </button>
