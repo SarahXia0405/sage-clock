@@ -502,3 +502,38 @@ body{
 .modalIdeaBox{
   overflow:auto;
 }
+
+/* ===== Garden ===== */
+.gardenStage{
+  margin-top: 16px;
+  position: relative;
+  border-radius: 22px;
+  overflow: hidden;
+  height: 180px;
+  border: 1px solid rgba(0,0,0,0.1);
+}
+
+.gardenBg img{
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* flowers laid on top of garden */
+.gardenFlowers{
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  bottom: 12px;
+  display: flex;
+  gap: 12px;
+  align-items: flex-end;
+  pointer-events: none;
+}
+
+.gardenFlower{
+  height: 42px;        /* 和左边生成大小一致 */
+  width: auto;
+  object-fit: contain;
+}
