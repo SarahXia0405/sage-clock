@@ -1,3 +1,4 @@
+// frontend/src/components/RestIdeasModal.tsx
 import React, { useEffect, useMemo, useState } from "react";
 
 function randInt(min: number, max: number) {
@@ -49,11 +50,11 @@ export default function RestIdeasModal({
   const [idea, setIdea] = useState(() => pickRandom(DEFAULT_REST_IDEAS));
   const [casting, setCasting] = useState(false);
 
-  // ✅ 二级弹窗开关 & 输入值
+  // Secondary idea modal
   const [ideaModalOpen, setIdeaModalOpen] = useState(false);
   const [input, setInput] = useState("");
 
-  // 合并随机池：默认 + 用户（去重）
+  // Merge pool: default + user (dedupe, case-insensitive)
   const ideaPool = useMemo(() => {
     const seen = new Set<string>();
     const merged: string[] = [];
@@ -70,6 +71,7 @@ export default function RestIdeasModal({
     return merged;
   }, [userIdeas]);
 
+  // Load user ideas from localStorage
   useEffect(() => {
     try {
       const raw = localStorage.getItem(USER_IDEAS_KEY);
@@ -91,12 +93,12 @@ export default function RestIdeasModal({
     }
   };
 
+  // When opened: initialize idea + optionally request new tomato
   useEffect(() => {
     if (!open) return;
     setIdea(pickRandom(ideaPool.length ? ideaPool : DEFAULT_REST_IDEAS));
     onRequestNewTomato?.();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open]);
+  }, [open, ideaPool, onRequestNewTomato]);
 
   const castSpell = () => {
     if (casting) return;
@@ -109,7 +111,6 @@ export default function RestIdeasModal({
 
   const openIdeaModal = () => {
     setIdeaModalOpen(true);
-    // 可选：打开时自动 focus 输入框（用 requestAnimationFrame 简化）
     window.requestAnimationFrame(() => {
       const el = document.getElementById("userIdeaModalInput") as HTMLInputElement | null;
       el?.focus();
@@ -130,7 +131,7 @@ export default function RestIdeasModal({
 
     persistUserIdeas([v, ...userIdeas]);
     setInput("");
-    setIdeaModalOpen(false); // ✅ 添加成功后关闭二级弹窗（符合“弹出窗口”交互）
+    setIdeaModalOpen(false);
   };
 
   const onClear = () => {
@@ -157,18 +158,13 @@ export default function RestIdeasModal({
           <div className="restModalTitle">Things to do during rest</div>
         </div>
 
-        {/* 上半区：idea + sage */}
+        {/* V2 hero: idea + sage */}
         <div className="restModalBodyV2">
           <div className="restIdeaBoxV2" aria-live="polite">
             {idea}
           </div>
 
-          <button
-            type="button"
-            className="sageBtn"
-            onClick={castSpell}
-            aria-label="Cast spell to get a new idea"
-          >
+          <button type="button" className="sageBtn" onClick={castSpell} aria-label="Cast spell">
             <img
               className="sageImg"
               src={casting ? "/assets/sage_magic_2.png" : "/assets/sage_magic_1.png"}
@@ -188,31 +184,22 @@ export default function RestIdeasModal({
           </button>
         </div>
 
-        {/* ✅ 底部触发区（不直接输入，改为“点击弹窗”） */}
+        {/* Tips-style trigger (no box look; only left lightbulb) */}
         <div className="userIdeaTriggerRow">
-          {/* 点击这里也会弹窗 */}
           <button
             type="button"
-            className="userIdeaTrigger"
-            onClick={openIdeaModal}
-            aria-label="Have your own idea"
-          >
-            <span className="ideaEmoji" aria-hidden="true">💡</span>
-            <span className="userIdeaTriggerText">Have your own idea?</span>
-          </button>
-
-          {/* 可选：右侧再给一个明显的 emoji/icon 按钮 */}
-          <button
-            type="button"
-            className="ideaEmojiBtn"
+            className="userIdeaTrigger userIdeaTip"
             onClick={openIdeaModal}
             aria-label="Open idea modal"
           >
-            💡
+            <span className="ideaEmoji" aria-hidden="true">
+              💡
+            </span>
+            <span className="userIdeaTriggerText">Have your own idea?</span>
           </button>
         </div>
 
-        {/* ✅ 二级弹窗 */}
+        {/* Secondary modal */}
         {ideaModalOpen && (
           <div className="ideaModalOverlay" onMouseDown={closeIdeaModal}>
             <div className="ideaModalCard" onMouseDown={(e) => e.stopPropagation()}>
@@ -249,7 +236,6 @@ export default function RestIdeasModal({
                   </button>
                 </div>
 
-                {/* 可选提示：目前有多少条用户 idea */}
                 <div className="userIdeaHint" aria-hidden="true">
                   Your ideas: {userIdeas.length}
                 </div>
