@@ -465,16 +465,6 @@ body{
   line-height: 1.25;
 }
 
-.diceBtn{
-  width: 180px;
-  height: 180px;
-  border-radius: 26px;
-  border: 0;
-  background: transparent;
-  cursor: pointer;
-  position: relative;
-  transform-origin: 50% 60%;
-}
 
 .diceBtn img{
   width: 100%;
@@ -491,7 +481,43 @@ body{
   font-size: 64px;
 }
 
-/* short dice shake animation */
+
+/* ---------- Watering can animation ---------- */
+.wateringCan{
+  transform-origin: 75% 80%;
+}
+
+@keyframes pourWater {
+  0%   { transform: translateX(0px) rotate(0deg); opacity: 1; }
+  20%  { transform: translateX(-26px) rotate(-12deg); }
+  55%  { transform: translateX(-26px) rotate(-18deg); }
+  100% { transform: translateX(0px) rotate(0deg); opacity: 1; }
+}
+
+.wateringCan.watering{
+  animation: pourWater 0.9s ease-in-out;
+}
+
+/* ---------- Dice (no dice.png) ---------- */
+.diceBtn{
+  width: 180px;
+  height: 180px;
+  border-radius: 26px;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  position: relative;
+  transform-origin: 50% 60%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+
+.diceEmoji{
+  font-size: 92px;
+  line-height: 1;
+}
+
 @keyframes diceShake {
   0%   { transform: rotate(0deg) translate(0,0); }
   20%  { transform: rotate(-10deg) translate(-2px, 1px); }
