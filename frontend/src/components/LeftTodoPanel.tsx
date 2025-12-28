@@ -21,31 +21,26 @@ export default function LeftTodoPanel({
   const { todo, done } = useMemo(() => splitTasks(state.tasks), [state.tasks]);
   const [text, setText] = useState("");
 
-  // ---- Progress bar sage position (0..100 mapped to track) ----
   const sageLeftPct = useMemo(() => {
     const pct = Math.max(0, Math.min(100, progress.pct || 0));
     return pct;
   }, [progress.pct]);
 
-  // ---- Current task for sage_read (must always exist) ----
   const currentSageTaskId = useMemo(() => {
     if (state.sage_task_id) return state.sage_task_id;
     if (todo[0]?.id) return todo[0].id;
-    // if no todo left, keep showing on last done task (or null)
     if (done[0]?.id) return done[0].id;
     return null;
   }, [state.sage_task_id, todo, done]);
 
-  // ---- Flower growth (RESET EACH SESSION) ----
-  // Each completed task => waterCount + 1
-  // Every 3 waters => grow stage (+1), stage 1..5
-  const [waterCount, setWaterCount] = useState<number>(0);
-  const [watering, setWatering] = useState<boolean>(false);
+  // SESSION ONLY: flower growth resets on refresh
+  const [waterCount, setWaterCount] = useState(0);
+  const [watering, setWatering] = useState(false);
 
   const flowerStage = useMemo(() => {
-    // stage: 0 means none yet; show flow_1 once any water happens
-    const stage = Math.min(5, Math.max(0, Math.floor(waterCount / 3) + (waterCount > 0 ? 1 : 0)));
-    return stage; // 0..5
+    if (waterCount <= 0) return 0;
+    const stage = Math.min(5, Math.floor((waterCount - 1) / 3) + 1);
+    return stage; // 1..5
   }, [waterCount]);
 
   const flowerReady = flowerStage >= 5;
@@ -58,14 +53,11 @@ export default function LeftTodoPanel({
   };
 
   const handleToggle = async (id: string) => {
-    // We want: clicking green clover => task done => gold & move down
-    // Also watering animation triggers when a task transitions to done.
     const target = state.tasks.find((t) => t.id === id);
     const wasDone = !!target?.done;
 
     await toggleDone(id);
 
-    // If it was not done and now becomes done, trigger watering
     if (!wasDone) {
       setWaterCount((c) => c + 1);
       setWatering(true);
@@ -79,14 +71,12 @@ export default function LeftTodoPanel({
 
   return (
     <div className="card">
-      {/* Header */}
       <div className="row" style={{ justifyContent: "space-between" }}>
         <div className="sectionTitle">To-Do List</div>
       </div>
 
       <div className="divider" />
 
-      {/* Progress row: bar + sage on bar + pct on right */}
       <div className="progressRow">
         <div className="progressTrackWrap">
           <ProgressBar pct={progress.pct} />
@@ -101,7 +91,6 @@ export default function LeftTodoPanel({
         <div className="progressPct">{progress.pct}%</div>
       </div>
 
-      {/* Split scroll areas */}
       <div className="leftSplit" style={{ marginTop: 12 }}>
         {/* TOP: TODO */}
         <div className="panelBox" style={{ flex: 1, minHeight: 220 }}>
@@ -148,7 +137,6 @@ export default function LeftTodoPanel({
                         <button
                           className={`sageDrop ${isSageHere ? "active" : ""}`}
                           onClick={() => handleSetCurrent(t.id)}
-                          title="Set as current"
                           type="button"
                         >
                           <img
@@ -175,32 +163,55 @@ export default function LeftTodoPanel({
               Good job!
             </div>
 
-            {/* Garden HUD (pot + can). Can must be ABOVE pot */}
-            <div className={`gardenHud ${watering ? "watering" : ""}`}>
-              {/* flower/pot stage */}
-              {flowerStage > 0 ? (
-                <img
-                  className="gardenPot"
-                  src={`/assets/flow_${Math.min(5, flowerStage)}.png`}
-                  alt="flower"
-                  draggable={false}
-                />
-              ) : (
-                <img
-                  className="gardenPot"
-                  src={`/assets/flow_1.png`}
-                  alt="flower"
-                  style={{ opacity: 0.35 }}
-                  draggable={false}
-                />
-              )}
+            {/* LOCKED POSITIONS by inline style */}
+            <div style={{ position: "relative", width: 220, height: 84, marginLeft: 12 }}>
+              {/* POT */}
+              <img
+                src={`/assets/flow_${Math.max(1, Math.min(5, flowerStage || 1))}.png`}
+                alt="flower"
+                draggable={false}
+                style={{
+                  position: "absolute",
+                  left: "50%",
+                  bottom: 0,
+                  transform: "translateX(-50%)",
+                  height: 62,
+                  width: "auto",
+                  objectFit: "contain",
+                  opacity: flowerStage > 0 ? 1 : 0.35
+                }}
+              />
 
-              {/* watering can ABOVE pot */}
-              <img className="gardenCan" src="/assets/water_can.png" alt="water can" draggable={false} />
+              {/* CAN: ALWAYS ABOVE POT */}
+              <img
+                src="/assets/water_can.png"
+                alt="water can"
+                draggable={false}
+                style={{
+                  position: "absolute",
+                  left: "70%",
+                  top: -6,
+                  transform: "translate(-50%, 0)",
+                  height: 52,
+                  width: "auto",
+                  objectFit: "contain",
+                  transformOrigin: "70% 70%",
+                  animation: watering ? "canWiggle 0.9s ease-in-out" : "none"
+                }}
+              />
 
-              {/* droplets/sparkle overlay */}
+              {/* WATER FX */}
               {watering && (
-                <div className="waterFX" aria-hidden>
+                <div
+                  style={{
+                    position: "absolute",
+                    left: "60%",
+                    top: 18,
+                    width: 90,
+                    height: 70,
+                    pointerEvents: "none"
+                  }}
+                >
                   <span className="drop d1" />
                   <span className="drop d2" />
                   <span className="drop d3" />
@@ -230,24 +241,20 @@ export default function LeftTodoPanel({
               ))}
             </div>
 
-            {/* Optional helper text when flower is ready */}
             {flowerReady && (
               <div style={{ marginTop: 14, color: "rgba(0,0,0,0.55)", fontWeight: 800 }}>
                 Your flower is ready — drag it to the sage on the right to plant.
               </div>
             )}
 
-            {/* Draggable flower icon (small, same as left size) */}
             {flowerReady && (
               <div style={{ marginTop: 10, display: "flex", justifyContent: "flex-end" }}>
                 <img
                   src="/assets/flow_5.png"
                   alt="ready flower"
                   draggable
-                  className="readyFlower"
-                  onDragStart={(e) => {
-                    e.dataTransfer.setData("text/plain", "flower_ready");
-                  }}
+                  style={{ height: 56, width: "auto", objectFit: "contain", cursor: "grab" }}
+                  onDragStart={(e) => e.dataTransfer.setData("text/plain", "flower_ready")}
                 />
               </div>
             )}
