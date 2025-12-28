@@ -284,7 +284,7 @@ body{
   display: flex;
   align-items: center;
   justify-content: flex-start;     /* ✅ 让整组默认靠左，跟 Good job 对齐 */
-  gap: 16px;
+  gap: 20px;
   padding-left: 0;                /* ✅ 和 Good job 左边对齐 */
 }
 
@@ -301,8 +301,8 @@ body{
 /* 水壶：相对 growRow 绝对定位，但用“像素”对齐花盆 */
 .waterCan{
   position: absolute;
-  left: 44px;                     /* ✅ 对准花盆中心的像素锚点（微调这一行即可） */
-  top: -18px;                      /* ✅ 在花盆上方 */
+  left: 50px;                     /* ✅ 对准花盆中心的像素锚点（微调这一行即可） */
+  top: -30px;                      /* ✅ 在花盆上方 */
   height: 92px;                   /* ✅ 更大 */
   width: auto;
   z-index: 6;
