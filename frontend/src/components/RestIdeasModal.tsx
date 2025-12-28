@@ -1,5 +1,5 @@
 // frontend/src/components/RestIdeasModal.tsx
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 
 function randInt(min: number, max: number) {
   return Math.floor(Math.random() * (max - min + 1)) + min;
@@ -35,42 +35,21 @@ function pickRandom(pool: string[]) {
   return pool[randInt(0, pool.length - 1)];
 }
 
-/**
- * Basic heuristic sanitization/validation.
- * Goal: filter obvious junk (single letter, random chars, URLs, repeated chars).
- */
-function sanitizeIdea(raw: string): { ok: boolean; value: string; reason?: string } {
-  let v = (raw ?? "").trim();
-
-  // Collapse multiple spaces
-  v = v.replace(/\s+/g, " ");
-
-  if (!v) return { ok: false, value: "", reason: "empty" };
-
-  // Too short: reject 1-3 chars (e.g., "a", "ok", "yo")
-  if (v.length < 4) return { ok: false, value: "", reason: "too_short" };
-
-  // Reject URLs
-  if (/https?:\/\/|www\./i.test(v)) return { ok: false, value: "", reason: "url" };
-
-  // Must include at least one letter
+function sanitizeIdea(raw: string): { ok: boolean; value: string } {
+  let v = (raw ?? "").trim().replace(/\s+/g, " ");
+  if (v.length < 4) return { ok: false, value: "" };
+  if (/https?:\/\/|www\./i.test(v)) return { ok: false, value: "" };
   const letters = v.match(/[A-Za-z]/g) ?? [];
-  if (letters.length === 0) return { ok: false, value: "", reason: "no_letters" };
+  if (letters.length === 0) return { ok: false, value: "" };
+  if (/^(.)\1{4,}$/.test(v.replace(/\s/g, ""))) return { ok: false, value: "" };
 
-  // Reject repeated single char (e.g., aaaaa, !!!!!)
-  if (/^(.)\1{4,}$/.test(v.replace(/\s/g, "")))
-    return { ok: false, value: "", reason: "repeated_char" };
-
-  // If it's only letters/spaces (no punctuation), apply a light "word-ish" check
   const onlyLettersSpaces = /^[A-Za-z\s]+$/.test(v);
   if (onlyLettersSpaces) {
     const vowelCount = (v.match(/[aeiou]/gi) ?? []).length;
-    if (vowelCount < 2) return { ok: false, value: "", reason: "not_wordish" };
+    if (vowelCount < 2) return { ok: false, value: "" };
   }
 
-  // Normalize: capitalize first letter (optional)
   v = v.charAt(0).toUpperCase() + v.slice(1);
-
   return { ok: true, value: v };
 }
 
@@ -81,20 +60,20 @@ export default function RestIdeasModal({
 }: {
   open: boolean;
   onClose: () => void;
-
-  // ✅ fixed tomato: use the SAME src as timer page
-  tomatoSrc: string;
+  tomatoSrc: string; // ✅ fixed: use same tomato as timer page
 }) {
   const [userIdeas, setUserIdeas] = useState<string[]>([]);
+
+  // ✅ LOCKED: idea 只在组件首次创建时决定一次；之后永远不自动变
   const [idea, setIdea] = useState(() => pickRandom(DEFAULT_REST_IDEAS));
+
   const [casting, setCasting] = useState(false);
 
   // Secondary idea modal
   const [ideaModalOpen, setIdeaModalOpen] = useState(false);
   const [input, setInput] = useState("");
-  const [inputError, setInputError] = useState<string>("");
+  const [inputError, setInputError] = useState("");
 
-  // Merge pool: default + user (dedupe, case-insensitive)
   const ideaPool = useMemo(() => {
     const seen = new Set<string>();
     const merged: string[] = [];
@@ -111,7 +90,7 @@ export default function RestIdeasModal({
     return merged;
   }, [userIdeas]);
 
-  // Load user ideas from localStorage ONCE
+  // Load user ideas once (does NOT change idea)
   useEffect(() => {
     try {
       const raw = localStorage.getItem(USER_IDEAS_KEY);
@@ -133,19 +112,7 @@ export default function RestIdeasModal({
     }
   };
 
-  /**
-   * ✅ IMPORTANT: initialize idea ONLY when modal transitions to open.
-   * Avoid depending on ideaPool here, otherwise idea changes when userIdeas load/add.
-   */
-  const wasOpenRef = useRef(false);
-  useEffect(() => {
-    if (open && !wasOpenRef.current) {
-      // opening edge: init once
-      setIdea(pickRandom(ideaPool.length ? ideaPool : DEFAULT_REST_IDEAS));
-    }
-    wasOpenRef.current = open;
-  }, [open]); // <-- only depend on open
-
+  // ✅ ONLY CHANGE idea here
   const castSpell = () => {
     if (casting) return;
     setCasting(true);
@@ -172,17 +139,11 @@ export default function RestIdeasModal({
       setInputError("Please enter a real rest idea (a short phrase or sentence).");
       return;
     }
-
     const v = cleaned.value;
-    const exists = userIdeas.some((x) => x.trim().toLowerCase() === v.toLowerCase());
-    if (exists) {
-      setInput("");
-      setInputError("");
-      setIdeaModalOpen(false);
-      return;
-    }
 
-    persistUserIdeas([v, ...userIdeas]);
+    const exists = userIdeas.some((x) => x.trim().toLowerCase() === v.toLowerCase());
+    if (!exists) persistUserIdeas([v, ...userIdeas]);
+
     setInput("");
     setInputError("");
     setIdeaModalOpen(false);
@@ -209,7 +170,6 @@ export default function RestIdeasModal({
         </button>
 
         <div className="restModalHeader">
-          {/* ✅ fixed tomato: purely display */}
           <img className="restModalTomato" src={tomatoSrc} alt="rest tomato" draggable={false} />
           <div className="restModalTitle">Things to do during rest</div>
         </div>
@@ -239,7 +199,6 @@ export default function RestIdeasModal({
           </button>
         </div>
 
-        {/* Tips-style trigger */}
         <div className="userIdeaTriggerRow">
           <button
             type="button"
@@ -254,7 +213,6 @@ export default function RestIdeasModal({
           </button>
         </div>
 
-        {/* Secondary modal */}
         {ideaModalOpen && (
           <div className="ideaModalOverlay" onMouseDown={closeIdeaModal}>
             <div className="ideaModalCard" onMouseDown={(e) => e.stopPropagation()}>
