@@ -23,12 +23,11 @@ export default function RightTimerPanel({
   const [workMin, setWorkMin] = useState(25);
   const [restMin, setRestMin] = useState(5);
 
-  // random tomato frame
   const [workFrame, setWorkFrame] = useState<number>(() => randInt(1, 6));
   const [restFrame, setRestFrame] = useState<number>(() => randInt(1, 5));
 
-  // planted flower (SESSION ONLY)
-  const [planted, setPlanted] = useState<boolean>(false);
+  // SESSION ONLY
+  const [planted, setPlanted] = useState(false);
 
   const remaining = state.timer.remaining_sec;
   const mode = state.timer.mode;
@@ -47,7 +46,6 @@ export default function RightTimerPanel({
 
   const onApply = async () => {
     await timerSet("work", workMin, bindTask);
-    // restMin still UI-only for now
   };
 
   const onStart = async () => {
@@ -86,7 +84,13 @@ export default function RightTimerPanel({
             value={workMin}
             min={1}
             onChange={(e) => setWorkMin(Number(e.target.value))}
-            style={{ width: 80, height: 40, borderRadius: 12, border: "1px solid rgba(0,0,0,0.12)", padding: "0 10px" }}
+            style={{
+              width: 80,
+              height: 40,
+              borderRadius: 12,
+              border: "1px solid rgba(0,0,0,0.12)",
+              padding: "0 10px"
+            }}
           />
           <span className="mini">min</span>
         </div>
@@ -98,7 +102,13 @@ export default function RightTimerPanel({
             value={restMin}
             min={1}
             onChange={(e) => setRestMin(Number(e.target.value))}
-            style={{ width: 80, height: 40, borderRadius: 12, border: "1px solid rgba(0,0,0,0.12)", padding: "0 10px" }}
+            style={{
+              width: 80,
+              height: 40,
+              borderRadius: 12,
+              border: "1px solid rgba(0,0,0,0.12)",
+              padding: "0 10px"
+            }}
           />
           <span className="mini">min</span>
         </div>
@@ -128,20 +138,57 @@ export default function RightTimerPanel({
         </div>
 
         <div
-          className="sceneStage"
+          style={{
+            position: "relative",
+            width: "100%",
+            overflow: "hidden",
+            borderRadius: 18
+          }}
           onDragOver={(e) => e.preventDefault()}
           onDrop={(e) => {
             const v = e.dataTransfer.getData("text/plain");
             if (v === "flower_ready") setPlanted(true);
           }}
         >
-          <img className="sceneImg" src="/assets/scene_sage.png" alt="scene" draggable={false} />
+          <img
+            src="/assets/scene_sage.png"
+            alt="scene"
+            draggable={false}
+            style={{ width: "100%", height: "auto", display: "block" }}
+          />
 
-          {/* clock on sage’s held clock */}
-          <AnalogClock className="sageHeldClock" size={104} />
+          {/* Clock on sage’s held clock (lock by inline style, avoid CSS conflicts) */}
+          <AnalogClock
+            size={104}
+            style={{
+              position: "absolute",
+              left: "52%",
+              top: "70%",
+              transform: "translate(-50%, -50%)",
+              zIndex: 10,
+              pointerEvents: "none"
+            }}
+          />
 
-          {/* planted flower: SMALL, same as left */}
-          {planted && <img className="plantedFlower" src="/assets/flow_5.png" alt="planted" draggable={false} />}
+          {/* Planted flower should be SMALL (same as left) */}
+          {planted && (
+            <img
+              src="/assets/flow_5.png"
+              alt="planted"
+              draggable={false}
+              style={{
+                position: "absolute",
+                left: "74%",
+                top: "68%",
+                transform: "translate(-50%, -50%)",
+                height: 56,
+                width: "auto",
+                objectFit: "contain",
+                zIndex: 12,
+                pointerEvents: "none"
+              }}
+            />
+          )}
         </div>
       </div>
     </div>
