@@ -277,79 +277,76 @@ body{
 }
 
 /* ===== Watering / flower area ===== */
+/* watering row (pot + can) */
 .growRow{
-  position: relative;
-  height: 96px;
-  margin-top: 10px;
-}
-/* 让这一组跟着 Good job 标题对齐 */
-.growWrap{
-  position: relative;
-  display: inline-block;
-  height: 80px;      /* 够放花盆+水壶 */
-  width: 120px;      /* 够放花盆 */
-  margin-left: 0;    /* 关键：与 Good job 左对齐 */
+  position: relative;              /* ✅ 关键：让内部绝对定位都以它为参照 */
+  height: 92px;                    /* 给花盆+水壶一个固定舞台 */
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;     /* ✅ 让整组默认靠左，跟 Good job 对齐 */
+  gap: 16px;
+  padding-left: 0;                /* ✅ 和 Good job 左边对齐 */
 }
 
-/* 花盆：底部对齐 */
+/* 花盆：作为“锚点”放左侧 */
 .flowerPot{
-  position: absolute;
-  left: 0;           /* 你也可以改成 10px */
-  bottom: 0;
+  position: relative;             /* ✅ 不再 absolute 漂移 */
   height: 55px;
   width: auto;
   z-index: 2;
-  user-select:none;
-  pointer-events:none;
+  user-select: none;
+  pointer-events: none;
 }
 
-/* 水壶：以花盆中心为锚点放“正上方” */
+/* 水壶：相对 growRow 绝对定位，但用“像素”对齐花盆 */
 .waterCan{
   position: absolute;
-  left: 20px;        /* 这里决定“正上方”对齐点：对准花盆主体中心 */
-  bottom: 42px;      /* 让它在花盆上方 */
-  height: 90px;      /* 更大 */
+  left: 44px;                     /* ✅ 对准花盆中心的像素锚点（微调这一行即可） */
+  top: -8px;                      /* ✅ 在花盆上方 */
+  height: 92px;                   /* ✅ 更大 */
   width: auto;
   z-index: 6;
   transform: translateX(-50%) rotate(-18deg);
-  user-select:none;
-  pointer-events:none;
-
-  opacity: 0;        /* 你浇水动画时再改为 1 */
-}
-
-.waterCan.pouring{
-  opacity: 1;
-  animation: pour 650ms ease-in-out 1;
-}
-
-@keyframes pour{
-  0%   { transform: translateX(-50%) rotate(0deg) translateY(0px); }
-  35%  { transform: translateX(-50%) rotate(-22deg) translateY(4px); }
-  70%  { transform: translateX(-50%) rotate(-18deg) translateY(2px); }
-  100% { transform: translateX(-50%) rotate(0deg) translateY(0px); }
-}
-
-/* Optional: a simple “sparkle / droplets” overlay */
-.waterSpark{
-  position:absolute;
-  left: 75%;
-  top: 24px;
-  width: 120px;
-  height: 60px;
-  z-index: 7;
-  pointer-events:none;
+  user-select: none;
+  pointer-events: none;
   opacity: 0;
 }
+
+/* 倒水时显示 */
+.waterCan.pouring{
+  opacity: 1;
+  animation: pourCan 650ms ease-in-out;
+}
+
+/* 水滴/闪光层：同一个锚点，跟水壶一起对齐 */
+.waterSpark{
+  position: absolute;
+  left: 44px;                     /* ✅ 必须和 waterCan.left 同值 */
+  top: 26px;                      /* ✅ 水滴落点高度 */
+  transform: translateX(-50%);
+  z-index: 7;
+  opacity: 0;
+  pointer-events: none;
+}
+
 .waterSpark.on{
   opacity: 1;
-  animation: spark 650ms ease-out 1;
+  animation: sparkPop 650ms ease-in-out;
 }
-@keyframes spark{
-  0%{ opacity:0; transform: translateY(-6px); }
-  35%{ opacity:1; }
-  100%{ opacity:0; transform: translateY(10px); }
+
+@keyframes pourCan{
+  0%   { transform: translateX(-50%) rotate(-10deg) translateY(0); }
+  40%  { transform: translateX(-50%) rotate(-26deg) translateY(2px); }
+  100% { transform: translateX(-50%) rotate(-18deg) translateY(0); }
 }
+
+@keyframes sparkPop{
+  0%   { transform: translateX(-50%) scale(0.9); opacity: 0; }
+  25%  { transform: translateX(-50%) scale(1.0); opacity: 1; }
+  100% { transform: translateX(-50%) scale(1.05); opacity: 0; }
+}
+
+
 
 /* ===== Right timer digits ===== */
 .timerDigits{
