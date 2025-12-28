@@ -658,3 +658,183 @@ body{
   pointer-events: none;
 }
 
+/* ========= ADD/OVERRIDE BELOW (paste at END of styles.css) ========= */
+
+/* Make left split scroll actually work */
+.leftSplit{
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  height: calc(100vh - 36px); /* padding 18*2 */
+}
+
+.panelScroll{
+  overflow-y: auto;
+  padding-right: 6px;
+}
+
+/* --- Set-as-current button with sage_read always visible --- */
+.sageDrop{
+  width: 220px;
+  height: 68px;
+  border-radius: 18px;
+  border: 1px dashed rgba(0,0,0,0.18);
+  background: rgba(255,255,255,0.0);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap: 12px;
+  font-weight: 900;
+  color: rgba(0,0,0,0.62);
+  cursor: pointer;
+}
+
+.sageDrop.active{
+  background: rgba(0,0,0,0.04);
+  border-style: solid;
+}
+
+.sageReadIcon{
+  height: 44px;
+  object-fit: contain;
+}
+
+/* --- Ready flower (draggable) small --- */
+.readyFlower{
+  height: 54px;
+  width: auto;
+  object-fit: contain;
+  cursor: grab;
+}
+
+/* --- Good job garden HUD: POT bottom + CAN ABOVE POT --- */
+.gardenHud{
+  position: relative;
+  width: 220px;
+  height: 84px;
+  margin-left: 12px;
+}
+
+/* pot sits bottom-center */
+.gardenPot{
+  position: absolute;
+  left: 50%;
+  bottom: 0px;
+  transform: translateX(-50%);
+  height: 62px;
+  width: auto;
+  object-fit: contain;
+}
+
+/* can sits ABOVE pot, slightly right so it "pours" onto pot */
+.gardenCan{
+  position: absolute;
+  left: 72%;
+  top: -8px;
+  transform: translate(-50%, 0);
+  height: 46px;          /* bigger than before */
+  width: auto;
+  object-fit: contain;
+  transform-origin: 70% 70%;
+}
+
+/* watering animation: can wiggle + tiny pour movement */
+.gardenHud.watering .gardenCan{
+  animation: canWiggle 0.9s ease-in-out;
+}
+
+@keyframes canWiggle{
+  0%   { transform: translate(-50%, 0) rotate(0deg); }
+  20%  { transform: translate(-50%, 0) rotate(-10deg); }
+  45%  { transform: translate(-50%, 2px) rotate(-16deg); }
+  70%  { transform: translate(-50%, 0) rotate(-8deg); }
+  100% { transform: translate(-50%, 0) rotate(0deg); }
+}
+
+/* droplets + sparkles (pure CSS) */
+.waterFX{
+  position:absolute;
+  left: 63%;
+  top: 18px;     /* just under the can spout area */
+  width: 80px;
+  height: 70px;
+  pointer-events:none;
+}
+
+.drop{
+  position:absolute;
+  width: 6px;
+  height: 10px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.95);
+  filter: drop-shadow(0 2px 2px rgba(0,0,0,0.25));
+  animation: dropFall 0.7s ease-in-out forwards;
+}
+
+.drop.d1{ left: 14px; top: 2px; animation-delay: 0.00s; }
+.drop.d2{ left: 28px; top: 0px; animation-delay: 0.08s; }
+.drop.d3{ left: 42px; top: 4px; animation-delay: 0.16s; }
+
+@keyframes dropFall{
+  0%   { transform: translateY(0) scale(1); opacity: 0.0; }
+  10%  { opacity: 1; }
+  80%  { opacity: 1; }
+  100% { transform: translateY(44px) scale(0.85); opacity: 0.0; }
+}
+
+.spark{
+  position:absolute;
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.95);
+  box-shadow: 0 0 12px rgba(255,255,255,0.9);
+  animation: sparkle 0.8s ease-in-out forwards;
+}
+
+.spark.s1{ left: 18px; top: 30px; animation-delay: 0.06s; }
+.spark.s2{ left: 44px; top: 36px; animation-delay: 0.12s; }
+
+@keyframes sparkle{
+  0%   { transform: scale(0.4); opacity: 0.0; }
+  25%  { opacity: 1; transform: scale(1); }
+  70%  { opacity: 1; transform: scale(0.9); }
+  100% { opacity: 0; transform: scale(0.4); }
+}
+
+/* --- Scene: remove debug red frame, keep scaling stable --- */
+.sceneStage{
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+  border-radius: 18px;
+}
+
+.sceneImg{
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* Clock position uses % so it scales with image */
+.sageHeldClock{
+  position: absolute !important;
+  left: 52%;
+  top: 70%;
+  transform: translate(-50%, -50%);
+  z-index: 10;
+  pointer-events: none;
+}
+
+/* planted flower SMALL (same scale as left) */
+.plantedFlower{
+  position: absolute;
+  left: 74%;
+  top: 68%;
+  transform: translate(-50%, -50%);
+  height: 62px;
+  width: auto;
+  object-fit: contain;
+  z-index: 12;
+  pointer-events: none;
+}
