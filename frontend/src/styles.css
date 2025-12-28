@@ -362,3 +362,13 @@ body{
   pointer-events: none;
 }
 
+
+.sceneStage{
+  position: relative !important;
+  outline: 4px solid rgba(255,0,0,0.25); /* debug */
+}
+
+.sageHeldClock{
+  outline: 4px solid rgba(0,128,255,0.25); /* debug */
+}
+
