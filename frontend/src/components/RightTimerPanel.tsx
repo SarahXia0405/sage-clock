@@ -116,7 +116,6 @@ export default function RightTimerPanel({
     const f = e.target.files?.[0];
     if (!f) return;
 
-    // accept only audio/*
     if (!f.type.startsWith("audio/")) {
       e.target.value = "";
       return;
@@ -133,18 +132,55 @@ export default function RightTimerPanel({
 
   return (
     <div>
-      <div className="topControls">
-        <button className="btn secondary" onClick={onApply}>Set</button>
+      {/* ===== Top row: Timer controls + Alarm controls aligned ===== */}
+      <div className="topControls alarmRow">
+        <div className="timerControls">
+          <button className="btn secondary" onClick={onApply}>
+            Set
+          </button>
 
-        {!state.timer.running ? (
-          <button className="btn" onClick={onStart}>Start</button>
-        ) : (
-          <button className="btn" onClick={() => timerControl("pause")}>Pause</button>
-        )}
+          {!state.timer.running ? (
+            <button className="btn" onClick={onStart}>
+              Start
+            </button>
+          ) : (
+            <button className="btn" onClick={() => timerControl("pause")}>
+              Pause
+            </button>
+          )}
 
-        <button className="btn secondary" onClick={() => timerControl("skip")}>Skip</button>
+          <button className="btn secondary" onClick={() => timerControl("skip")}>
+            Skip
+          </button>
+        </div>
+
+        <div className="alarmControls">
+          <span className="alarmLabel">Alarm:</span>
+
+          {/* hidden file input lives here so Upload always works */}
+          <input
+            ref={fileRef}
+            type="file"
+            accept="audio/*"
+            style={{ display: "none" }}
+            onChange={onAlarmFileChange}
+          />
+
+          <button type="button" onClick={onPickAlarm} className="btn secondary">
+            Upload
+          </button>
+
+          <button type="button" onClick={onTestAlarm} className="btn secondary">
+            Test
+          </button>
+
+          <button type="button" onClick={onResetAlarm} className="btn secondary">
+            Reset
+          </button>
+        </div>
       </div>
 
+      {/* ===== Work/Rest inputs ===== */}
       <div style={{ display: "flex", alignItems: "center", gap: 14, marginTop: 10 }}>
         <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
           <span style={{ fontWeight: 900 }}>Work</span>
@@ -181,48 +217,10 @@ export default function RightTimerPanel({
           />
           <span className="mini">min</span>
         </div>
-
-        {/* alarm controls (small, no big UI) */}
-        <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 10 }}>
-          <input
-            ref={fileRef}
-            type="file"
-            accept="audio/*"
-            style={{ display: "none" }}
-            onChange={onAlarmFileChange}
-          />
-          <button
-            type="button"
-            onClick={onPickAlarm}
-            className="btn secondary"
-            style={{ padding: "8px 12px", borderRadius: 12 }}
-            title="Upload"
-          >
-            Upload alarm
-          </button>
-          <button
-            type="button"
-            onClick={onTestAlarm}
-            className="btn secondary"
-            style={{ padding: "8px 12px", borderRadius: 12 }}
-            title="Test"
-          >
-            Test
-          </button>
-          <button
-            type="button"
-            onClick={onResetAlarm}
-            className="btn secondary"
-            style={{ padding: "8px 12px", borderRadius: 12 }}
-            title="Reset"
-          >
-            Reset
-          </button>
-        </div>
       </div>
 
+      {/* ===== Tomato + digits ===== */}
       <div style={{ marginTop: 14, display: "flex", alignItems: "center", gap: 16 }}>
-        {/* tomato (clickable only in rest) */}
         <img
           src={tomatoSrc}
           alt="tomato"
@@ -247,7 +245,7 @@ export default function RightTimerPanel({
         </div>
       </div>
 
-      {/* Scene */}
+      {/* ===== Scene ===== */}
       <div className="scene">
         <div className="mini" style={{ marginBottom: 8 }}>
           Scene · Drop your flower onto sage to plant
@@ -284,7 +282,7 @@ export default function RightTimerPanel({
         </div>
       </div>
 
-      {/* Garden */}
+      {/* ===== Garden ===== */}
       <div className="gardenStage">
         <div className="gardenBg">
           <img src="/assets/garden.png" alt="garden" draggable={false} />
@@ -304,7 +302,7 @@ export default function RightTimerPanel({
         </div>
       </div>
 
-      {/* Rest modal */}
+      {/* ===== Rest modal ===== */}
       <RestIdeasModal
         open={restModalOpen}
         onClose={() => setRestModalOpen(false)}
