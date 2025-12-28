@@ -543,3 +543,140 @@ body{
   outline-offset: 6px;
   border-radius: 18px;
 }
+
+/* ===== Rest Modal ===== */
+.modalOverlay{
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 24px;
+}
+
+.modalCard{
+  position: relative;
+  width: min(1180px, calc(100vw - 48px));
+  height: min(640px, calc(100vh - 72px));
+  background: #c9c9c9;
+  border-radius: 44px;
+  box-shadow: 0 24px 70px rgba(0,0,0,0.25);
+  overflow: hidden;
+  padding: 34px 40px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+}
+
+/* close button */
+.modalClose{
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  width: 56px;
+  height: 56px;
+  border-radius: 18px;
+  border: 0;
+  background: rgba(255,255,255,0.55);
+  font-size: 34px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+/* header: tomato + title */
+.restModalHeader{
+  display: flex;
+  align-items: center;
+  gap: 26px;
+  padding-right: 72px; /* 给右上角 X 留空间 */
+}
+
+.restModalTomato{
+  width: 150px;
+  height: 150px;
+  object-fit: contain;
+  flex: 0 0 auto;
+}
+
+.restModalTitle{
+  font-weight: 900;
+  font-size: 56px;
+  letter-spacing: 0.01em;
+  color: #111;
+  line-height: 1.02;
+}
+
+/* body: idea box + dice on right */
+.restModalBody{
+  margin-top: 22px;
+  flex: 1;
+  display: grid;
+  grid-template-columns: 1fr 220px;
+  gap: 26px;
+  align-items: center;
+}
+
+.restIdeaBox{
+  height: 320px;
+  border-radius: 22px;
+  border: 3px solid rgba(0,0,0,0.7);
+  padding: 32px 34px;
+  box-sizing: border-box;
+  font-weight: 900;
+  font-size: 40px;
+  color: #111;
+  display: flex;
+  align-items: center;
+}
+
+/* dice */
+.diceBtn{
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  justify-self: center;
+}
+
+.diceBtn img{
+  width: 150px;
+  height: 150px;
+  object-fit: contain;
+  display: block;
+  transform-origin: center;
+}
+
+/* short shake animation */
+.diceShake{
+  animation: diceShake 0.42s ease-in-out;
+}
+
+@keyframes diceShake{
+  0% { transform: rotate(0deg) translateX(0); }
+  20% { transform: rotate(-10deg) translateX(-6px); }
+  40% { transform: rotate(10deg) translateX(6px); }
+  60% { transform: rotate(-8deg) translateX(-4px); }
+  80% { transform: rotate(8deg) translateX(4px); }
+  100% { transform: rotate(0deg) translateX(0); }
+}
+
+/* responsive: small screens */
+@media (max-width: 820px){
+  .modalCard{
+    height: auto;
+    min-height: 520px;
+  }
+  .restModalTitle{
+    font-size: 40px;
+  }
+  .restIdeaBox{
+    font-size: 28px;
+    height: 240px;
+  }
+  .restModalBody{
+    grid-template-columns: 1fr;
+    justify-items: center;
+  }
+}
+
