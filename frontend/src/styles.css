@@ -282,29 +282,42 @@ body{
   height: 96px;
   margin-top: 10px;
 }
+/* 让这一组跟着 Good job 标题对齐 */
+.growWrap{
+  position: relative;
+  display: inline-block;
+  height: 80px;      /* 够放花盆+水壶 */
+  width: 120px;      /* 够放花盆 */
+  margin-left: 0;    /* 关键：与 Good job 左对齐 */
+}
+
+/* 花盆：底部对齐 */
 .flowerPot{
-  position:absolute;
-  left: 68%;
-  top: 18px;
-  transform: translateX(-50%);
+  position: absolute;
+  left: 0;           /* 你也可以改成 10px */
+  bottom: 0;
   height: 55px;
   width: auto;
   z-index: 2;
   user-select:none;
   pointer-events:none;
 }
+
+/* 水壶：以花盆中心为锚点放“正上方” */
 .waterCan{
-  position:absolute;
-  left: 82%;
-  top: -6px;            /* 保证在花上面 */
-  transform: translateX(-50%);
-  height: 80px;         /* 更大 */
+  position: absolute;
+  left: 20px;        /* 这里决定“正上方”对齐点：对准花盆主体中心 */
+  bottom: 42px;      /* 让它在花盆上方 */
+  height: 90px;      /* 更大 */
   width: auto;
-  z-index: 6;           /* 强制盖过花盆 */
+  z-index: 6;
+  transform: translateX(-50%) rotate(-18deg);
   user-select:none;
   pointer-events:none;
-  opacity: 0;
+
+  opacity: 0;        /* 你浇水动画时再改为 1 */
 }
+
 .waterCan.pouring{
   opacity: 1;
   animation: pour 650ms ease-in-out 1;
