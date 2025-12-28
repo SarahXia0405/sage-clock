@@ -10,7 +10,6 @@ function splitTasks(tasks: Task[]) {
 }
 
 const LS_WATER = "potato_clock_water_count_v1";
-const LS_PLANTED = "potato_clock_planted_task_id_v1";
 
 export default function LeftTodoPanel({
   state,
@@ -34,12 +33,7 @@ export default function LeftTodoPanel({
 
   const [watering, setWatering] = useState(false);
 
-  const [plantedTaskId, setPlantedTaskId] = useState<string | null>(() => {
-    return localStorage.getItem(LS_PLANTED) || null;
-  });
-
   const flowStage = useMemo(() => {
-    // flow_1 is baseline; every 3 waters -> next stage
     const stage = 1 + Math.floor(waterCount / 3);
     return Math.min(5, Math.max(1, stage));
   }, [waterCount]);
@@ -47,11 +41,6 @@ export default function LeftTodoPanel({
   useEffect(() => {
     localStorage.setItem(LS_WATER, String(waterCount));
   }, [waterCount]);
-
-  useEffect(() => {
-    if (plantedTaskId) localStorage.setItem(LS_PLANTED, plantedTaskId);
-    else localStorage.removeItem(LS_PLANTED);
-  }, [plantedTaskId]);
 
   // Detect newly completed tasks (done transitions)
   const prevDoneIdsRef = useRef<Set<string>>(new Set());
@@ -67,9 +56,8 @@ export default function LeftTodoPanel({
     if (newlyDone > 0) {
       setWaterCount((c) => c + newlyDone);
 
-      // trigger watering animation once (even if multiple, still looks fine)
       setWatering(true);
-      window.setTimeout(() => setWatering(false), 900);
+      window.setTimeout(() => setWatering(false), 950);
     }
 
     prevDoneIdsRef.current = nowDoneIds;
@@ -77,10 +65,7 @@ export default function LeftTodoPanel({
 
   // -------- Current sage task logic --------
   const currentSageTaskId = useMemo(() => {
-    // If backend tells us, use it; otherwise fallback to first todo.
     const desired = state.sage_task_id || null;
-
-    // If desired is done, auto fallback to first todo.
     if (desired) {
       const t = state.tasks.find((x) => x.id === desired);
       if (t && !t.done) return desired;
@@ -88,7 +73,6 @@ export default function LeftTodoPanel({
     return todo[0]?.id ?? null;
   }, [state.sage_task_id, state.tasks, todo]);
 
-  // Move sage on bar together with fill; make position relative to track width via CSS
   const pct = progress.pct;
 
   const onAdd = async () => {
@@ -106,33 +90,16 @@ export default function LeftTodoPanel({
     await setSage(taskId);
   };
 
+  // flower is ONLY draggable source now (drop target is on RIGHT panel)
   const canDragFlower = flowStage >= 5;
-
   const onFlowerDragStart = (e: React.DragEvent) => {
     if (!canDragFlower) return;
-    e.dataTransfer.setData("text/plain", "flower");
+    e.dataTransfer.setData("text/plain", "flower:ready");
     e.dataTransfer.effectAllowed = "copy";
   };
 
-  const onSageDropZoneDrop = async (e: React.DragEvent, taskId: string) => {
-    e.preventDefault();
-    const payload = e.dataTransfer.getData("text/plain");
-
-    if (payload === "flower" && canDragFlower) {
-      // plant flower to THIS task's sage zone
-      setPlantedTaskId(taskId);
-      return;
-    }
-
-    // default: set sage to this task
-    await handleDropSage(taskId);
-  };
-
-  const plantedOnThisTask = (taskId: string) => plantedTaskId === taskId;
-
   return (
     <div className="card">
-      {/* Header */}
       <div className="panelHeader">
         <div className="sectionTitle">To-Do List</div>
       </div>
@@ -156,7 +123,6 @@ export default function LeftTodoPanel({
 
       <div className="divider" />
 
-      {/* Split layout: fixed top/bottom sizes + independent scroll */}
       <div className="leftSplit">
         {/* TOP: TODO */}
         <div className="panelBox" style={{ flex: "0 0 54%" }}>
@@ -200,10 +166,10 @@ export default function LeftTodoPanel({
                       <div className="taskText">{t.text}</div>
                     </div>
 
-                    {/* Sage drop zone (always shows label even if not active) */}
+                    {/* Sage drop zone (ONLY for setting current task now) */}
                     <div
                       onDragOver={(e) => e.preventDefault()}
-                      onDrop={(e) => onSageDropZoneDrop(e, t.id)}
+                      onDrop={() => handleDropSage(t.id)}
                       style={{
                         width: 190,
                         height: 70,
@@ -216,28 +182,12 @@ export default function LeftTodoPanel({
                         background: isSageHere ? "rgba(0,0,0,0.04)" : "transparent",
                         padding: "0 12px"
                       }}
-                      title={canDragFlower ? "Drop flower to plant, or drop sage to set current" : "Drop sage to set current"}
+                      title="Drop to set as current"
                     >
                       {isSageHere ? (
                         <>
-                          <img
-                            src="/assets/sage_read.png"
-                            alt="sage reading"
-                            style={{ height: 48 }}
-                            onError={(e) => {
-                              (e.currentTarget as HTMLImageElement).style.display = "none";
-                            }}
-                          />
+                          <img src="/assets/sage_read.png" alt="sage reading" style={{ height: 48 }} />
                           <div style={{ fontWeight: 900, opacity: 0.78 }}>I’m working on</div>
-
-                          {/* planted flower appears next to sage when planted */}
-                          {plantedOnThisTask(t.id) ? (
-                            <img
-                              src="/assets/flow_5.png"
-                              alt="planted flower"
-                              style={{ height: 44, marginLeft: 6, objectFit: "contain" }}
-                            />
-                          ) : null}
                         </>
                       ) : (
                         <div style={{ fontWeight: 800, opacity: 0.55 }}>Set as current</div>
@@ -247,7 +197,7 @@ export default function LeftTodoPanel({
                 );
               })}
 
-              {/* If todo empty but we still want sage_read always visible: show a standalone block */}
+              {/* Keep sage read visible even when no todo */}
               {todo.length === 0 ? (
                 <div className="taskItem" style={{ marginTop: 10 }}>
                   <div className="taskLeft" style={{ minHeight: 72 }} />
@@ -267,9 +217,6 @@ export default function LeftTodoPanel({
                   >
                     <img src="/assets/sage_read.png" alt="sage reading" style={{ height: 48 }} />
                     <div style={{ fontWeight: 900, opacity: 0.78 }}>I’m working on</div>
-                    {plantedTaskId ? (
-                      <img src="/assets/flow_5.png" alt="planted flower" style={{ height: 44, marginLeft: 6 }} />
-                    ) : null}
                   </div>
                 </div>
               ) : null}
@@ -284,36 +231,45 @@ export default function LeftTodoPanel({
               Good job!
             </div>
 
-            {/* Flower growth display + watering animation */}
-            <div style={{ position: "relative", width: 220, height: 90 }}>
-              {/* Pot/flower stage */}
+            {/* Flower + Can + Water drops + Sparkles */}
+            <div className="gardenWrap">
               <img
+                className="gardenFlower"
                 src={`/assets/flow_${flowStage}.png`}
                 alt={`flower stage ${flowStage}`}
-                style={{ height: 80, objectFit: "contain", position: "absolute", left: 0, top: 4 }}
                 onError={(e) => {
                   (e.currentTarget as HTMLImageElement).style.display = "none";
                 }}
                 draggable={false}
               />
 
-              {/* Watering can animates when watering=true */}
               <img
+                className={watering ? "gardenCan watering" : "gardenCan"}
                 src="/assets/watering_can.png"
                 alt="watering can"
-                className={watering ? "wateringCan watering" : "wateringCan"}
-                style={{
-                  height: 70,
-                  objectFit: "contain",
-                  position: "absolute",
-                  right: 0,
-                  top: 0
-                }}
                 onError={(e) => {
                   (e.currentTarget as HTMLImageElement).style.display = "none";
                 }}
                 draggable={false}
               />
+
+              {/* Water drops + sparkles only when watering */}
+              {watering ? (
+                <>
+                  <div className="waterDrops" aria-hidden="true">
+                    <span className="drop d1" />
+                    <span className="drop d2" />
+                    <span className="drop d3" />
+                    <span className="drop d4" />
+                    <span className="drop d5" />
+                  </div>
+                  <div className="sparkles" aria-hidden="true">
+                    <span className="sp s1" />
+                    <span className="sp s2" />
+                    <span className="sp s3" />
+                  </div>
+                </>
+              ) : null}
             </div>
           </div>
 
@@ -323,7 +279,7 @@ export default function LeftTodoPanel({
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
             <div className="mini" style={{ fontSize: 14, fontWeight: 800, opacity: 0.75 }}>
               {canDragFlower
-                ? "Your flower is ready — drag it to the sage to plant."
+                ? "Your flower is ready — drag it to the sage on the right to plant."
                 : `Watering progress: ${waterCount} (every 3 grows a new flower)`}
             </div>
 
@@ -333,7 +289,7 @@ export default function LeftTodoPanel({
                 alt="draggable flower"
                 draggable
                 onDragStart={onFlowerDragStart}
-                style={{ height: 54, cursor: "grab", objectFit: "contain" }}
+                style={{ height: 58, cursor: "grab", objectFit: "contain" }}
               />
             ) : null}
           </div>
