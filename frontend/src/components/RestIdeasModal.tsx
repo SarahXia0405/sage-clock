@@ -64,7 +64,7 @@ export default function RestIdeasModal({
 }) {
   const [userIdeas, setUserIdeas] = useState<string[]>([]);
 
-  // ✅ LOCKED: idea 只在组件首次创建时决定一次；之后永远不自动变
+  // ✅ LOCKED: idea only set on first mount + on sage click
   const [idea, setIdea] = useState(() => pickRandom(DEFAULT_REST_IDEAS));
 
   const [casting, setCasting] = useState(false);
@@ -112,12 +112,12 @@ export default function RestIdeasModal({
     }
   };
 
-  // ✅ ONLY CHANGE idea here
+  // ✅ ONLY CHANGE idea here (sage click)
   const castSpell = () => {
     if (casting) return;
     setCasting(true);
     window.setTimeout(() => {
-      setIdea(pickRandom(ideaPool.length ? ideaPool : DEFAULT_REST_IDEAS));
+      setIdea(() => pickRandom(ideaPool.length ? ideaPool : DEFAULT_REST_IDEAS));
       setCasting(false);
     }, 520);
   };
@@ -175,9 +175,8 @@ export default function RestIdeasModal({
         </div>
 
         <div className="restModalBodyV2">
-          <div className="restIdeaBoxV2" aria-live="polite">
-            {idea}
-          </div>
+          {/* ✅ remove aria-live to avoid scroll/reflow weirdness */}
+          <div className="restIdeaBoxV2">{idea}</div>
 
           <button type="button" className="sageBtn" onClick={castSpell} aria-label="Cast spell">
             <img
