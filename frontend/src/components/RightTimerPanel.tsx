@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useCallback } from "react";
+import React, { useMemo, useState, useCallback, useRef } from "react";
 import type { AppState } from "../types";
 import { timerControl, timerSet } from "../api";
 import AnalogClock from "./AnalogClock";
@@ -19,10 +19,20 @@ const FLOWER_DRAG_KEY = "flower_ready";
 
 export default function RightTimerPanel({
   state,
-  onState
+  onState,
+  alarmSrc,
+  onAlarmSrc,
+  defaultAlarmSrc,
+  onTestAlarm
 }: {
   state: AppState;
   onState: (s: AppState) => void;
+
+  // alarm (session-local)
+  alarmSrc: string;
+  onAlarmSrc: (src: string) => void;
+  defaultAlarmSrc: string;
+  onTestAlarm: () => void;
 }) {
   const [workMin, setWorkMin] = useState(25);
   const [restMin, setRestMin] = useState(5);
@@ -31,13 +41,16 @@ export default function RightTimerPanel({
   const [workFrame, setWorkFrame] = useState<number>(() => randInt(1, 6));
   const [restFrame, setRestFrame] = useState<number>(() => randInt(1, 5));
 
-  // ✅ modal state + modal tomato frame (1..5)
+  // modal state + modal tomato frame (1..5)
   const [restModalOpen, setRestModalOpen] = useState(false);
   const [modalRestFrame, setModalRestFrame] = useState<number>(() => randInt(1, 5));
 
-  // ✅ Garden (session-local)
+  // Garden (session-local)
   const [gardenFlowers, setGardenFlowers] = useState<Array<{ id: string; at: number }>>([]);
   const [dragOverSage, setDragOverSage] = useState(false);
+
+  // alarm upload
+  const fileRef = useRef<HTMLInputElement | null>(null);
 
   const remaining = state.timer.remaining_sec;
   const mode = state.timer.mode; // "work" | "rest"
@@ -67,7 +80,7 @@ export default function RightTimerPanel({
 
   const openRestModal = () => {
     if (!isRest) return;
-    setModalRestFrame(randInt(1, 5)); // 每次打开随机一个番茄
+    setModalRestFrame(randInt(1, 5));
     setRestModalOpen(true);
   };
 
@@ -88,15 +101,35 @@ export default function RightTimerPanel({
     const payload = e.dataTransfer.getData("text/plain");
     if (payload !== FLOWER_DRAG_KEY) return;
 
-    // add to garden
     setGardenFlowers((prev) => [
       ...prev,
       { id: `g_${Date.now()}_${Math.random().toString(16).slice(2)}`, at: Date.now() }
     ]);
 
-    // notify Left to reset growth
     window.dispatchEvent(new CustomEvent("flower:used"));
   }, []);
+
+  // ===== Alarm upload handlers =====
+  const onPickAlarm = () => fileRef.current?.click();
+
+  const onAlarmFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0];
+    if (!f) return;
+
+    // accept only audio/*
+    if (!f.type.startsWith("audio/")) {
+      e.target.value = "";
+      return;
+    }
+
+    const url = URL.createObjectURL(f);
+    onAlarmSrc(url);
+
+    // allow picking same file again later
+    e.target.value = "";
+  };
+
+  const onResetAlarm = () => onAlarmSrc(defaultAlarmSrc);
 
   return (
     <div>
@@ -147,6 +180,44 @@ export default function RightTimerPanel({
             }}
           />
           <span className="mini">min</span>
+        </div>
+
+        {/* alarm controls (small, no big UI) */}
+        <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 10 }}>
+          <input
+            ref={fileRef}
+            type="file"
+            accept="audio/*"
+            style={{ display: "none" }}
+            onChange={onAlarmFileChange}
+          />
+          <button
+            type="button"
+            onClick={onPickAlarm}
+            className="btn secondary"
+            style={{ padding: "8px 12px", borderRadius: 12 }}
+            title="Upload an alarm sound for this session"
+          >
+            Upload alarm
+          </button>
+          <button
+            type="button"
+            onClick={onTestAlarm}
+            className="btn secondary"
+            style={{ padding: "8px 12px", borderRadius: 12 }}
+            title="Test alarm"
+          >
+            Test
+          </button>
+          <button
+            type="button"
+            onClick={onResetAlarm}
+            className="btn secondary"
+            style={{ padding: "8px 12px", borderRadius: 12 }}
+            title="Reset to default alarm"
+          >
+            Reset
+          </button>
         </div>
       </div>
 
