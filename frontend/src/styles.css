@@ -371,3 +371,7 @@ body{
   outline: 4px solid rgba(0,128,255,0.25); /* debug */
 }
 
+.sceneStage img.sceneImg{
+  height: auto !important;
+}
+
