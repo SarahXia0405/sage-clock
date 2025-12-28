@@ -537,3 +537,9 @@ body{
   width: auto;
   object-fit: contain;
 }
+
+.sceneStageDropActive{
+  outline: 3px dashed rgba(0,0,0,0.25);
+  outline-offset: 6px;
+  border-radius: 18px;
+}
