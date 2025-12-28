@@ -35,14 +35,11 @@ export default function LeftTodoPanel({
   const activeTaskId = state.sage_task_id || todo[0]?.id || done[0]?.id || null;
 
   // ===== watering / flower growth =====
-  // simple local growth counter: every completed task triggers watering; after 3 waterings, flower grows to next stage.
-  // NOTE: if you already have backend state for growth, swap this to server-driven.
   const [waterCount, setWaterCount] = useState(0); // 0..∞
   const [pouring, setPouring] = useState(false);
 
   const stage = useMemo(() => {
-    // stage 1..5
-    const s = Math.floor(waterCount / 3) + 1;
+    const s = Math.floor(waterCount / 3) + 1; // 1..5
     return clamp(s, 1, 5);
   }, [waterCount]);
 
@@ -55,15 +52,29 @@ export default function LeftTodoPanel({
     setText("");
   };
 
+  // ✅ reset growth when flower planted on right
+  React.useEffect(() => {
+    const onUsed = () => {
+      setWaterCount(0);
+      setPouring(false);
+    };
+    window.addEventListener("flower:used", onUsed as EventListener);
+    return () => window.removeEventListener("flower:used", onUsed as EventListener);
+  }, []);
+
   const handleToggle = async (id: string) => {
+    // determine current status before toggling
+    const before = state.tasks.find((t) => t.id === id);
+    const wasDone = !!before?.done;
+
     await toggleDone(id);
 
-    // trigger watering animation when marking done (best-effort)
-    // We can’t reliably know if it was toggled to done vs undone without server return,
-    // but in your flow you mainly use it as "complete", so we treat as "done".
-    setPouring(true);
-    setWaterCount((c) => c + 1);
-    window.setTimeout(() => setPouring(false), 700);
+    // ✅ only water when turning a todo -> done (i.e., wasDone === false)
+    if (!wasDone) {
+      setPouring(true);
+      setWaterCount((c) => c + 1);
+      window.setTimeout(() => setPouring(false), 700);
+    }
   };
 
   const handleSetCurrent = async (taskId: string) => {
@@ -71,7 +82,6 @@ export default function LeftTodoPanel({
   };
 
   const sageX = useMemo(() => {
-    // place sage at end of black bar; compute by track width
     const w = trackW || 520;
     const x = (w * pct) / 100;
     return x;
@@ -148,7 +158,6 @@ export default function LeftTodoPanel({
                         <div className="taskText">{t.text}</div>
                       </div>
 
-                      {/* Right pill: only active shows reading sage */}
                       {isActive ? (
                         <div className="taskPill active" title="Current task">
                           <img src="/assets/sage_read.png" alt="sage reading" draggable={false} />
@@ -192,7 +201,6 @@ export default function LeftTodoPanel({
               draggable={false}
             />
             <div className={`waterSpark ${pouring ? "on" : ""}`}>
-              {/* lightweight CSS sparkle/droplet */}
               <svg width="120" height="60" viewBox="0 0 120 60">
                 <circle cx="30" cy="20" r="4" fill="rgba(255,255,255,0.9)" />
                 <circle cx="50" cy="30" r="3" fill="rgba(255,255,255,0.7)" />
@@ -222,7 +230,6 @@ export default function LeftTodoPanel({
                     </div>
                   </div>
 
-                  {/* keep right side aligned */}
                   <div style={{ width: 240, height: 78 }} />
                 </div>
               ))}
