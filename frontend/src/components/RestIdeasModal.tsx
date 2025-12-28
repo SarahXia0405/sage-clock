@@ -1,5 +1,5 @@
 // frontend/src/components/RestIdeasModal.tsx
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 
 function randInt(min: number, max: number) {
   return Math.floor(Math.random() * (max - min + 1)) + min;
@@ -35,16 +35,55 @@ function pickRandom(pool: string[]) {
   return pool[randInt(0, pool.length - 1)];
 }
 
+/**
+ * Basic heuristic sanitization/validation.
+ * Goal: filter obvious junk (single letter, random chars, URLs, repeated chars).
+ */
+function sanitizeIdea(raw: string): { ok: boolean; value: string; reason?: string } {
+  let v = (raw ?? "").trim();
+
+  // Collapse multiple spaces
+  v = v.replace(/\s+/g, " ");
+
+  if (!v) return { ok: false, value: "", reason: "empty" };
+
+  // Too short: reject 1-3 chars (e.g., "a", "ok", "yo")
+  if (v.length < 4) return { ok: false, value: "", reason: "too_short" };
+
+  // Reject URLs
+  if (/https?:\/\/|www\./i.test(v)) return { ok: false, value: "", reason: "url" };
+
+  // Must include at least one letter
+  const letters = v.match(/[A-Za-z]/g) ?? [];
+  if (letters.length === 0) return { ok: false, value: "", reason: "no_letters" };
+
+  // Reject repeated single char (e.g., aaaaa, !!!!!)
+  if (/^(.)\1{4,}$/.test(v.replace(/\s/g, "")))
+    return { ok: false, value: "", reason: "repeated_char" };
+
+  // If it's only letters/spaces (no punctuation), apply a light "word-ish" check
+  const onlyLettersSpaces = /^[A-Za-z\s]+$/.test(v);
+  if (onlyLettersSpaces) {
+    const vowelCount = (v.match(/[aeiou]/gi) ?? []).length;
+    if (vowelCount < 2) return { ok: false, value: "", reason: "not_wordish" };
+  }
+
+  // Normalize: capitalize first letter (optional)
+  v = v.charAt(0).toUpperCase() + v.slice(1);
+
+  return { ok: true, value: v };
+}
+
 export default function RestIdeasModal({
   open,
   onClose,
-  tomatoSrc,
-  onRequestNewTomato
+  tomatoSrc
 }: {
   open: boolean;
   onClose: () => void;
+
+  // ✅ fixed tomato: use the SAME src as timer page
   tomatoSrc: string;
-  onRequestNewTomato?: () => void;
 }) {
   const [userIdeas, setUserIdeas] = useState<string[]>([]);
   const [idea, setIdea] = useState(() => pickRandom(DEFAULT_REST_IDEAS));
@@ -53,6 +92,7 @@ export default function RestIdeasModal({
   // Secondary idea modal
   const [ideaModalOpen, setIdeaModalOpen] = useState(false);
   const [input, setInput] = useState("");
+  const [inputError, setInputError] = useState<string>("");
 
   // Merge pool: default + user (dedupe, case-insensitive)
   const ideaPool = useMemo(() => {
@@ -71,7 +111,7 @@ export default function RestIdeasModal({
     return merged;
   }, [userIdeas]);
 
-  // Load user ideas from localStorage
+  // Load user ideas from localStorage ONCE
   useEffect(() => {
     try {
       const raw = localStorage.getItem(USER_IDEAS_KEY);
@@ -93,12 +133,18 @@ export default function RestIdeasModal({
     }
   };
 
-  // When opened: initialize idea + optionally request new tomato
+  /**
+   * ✅ IMPORTANT: initialize idea ONLY when modal transitions to open.
+   * Avoid depending on ideaPool here, otherwise idea changes when userIdeas load/add.
+   */
+  const wasOpenRef = useRef(false);
   useEffect(() => {
-    if (!open) return;
-    setIdea(pickRandom(ideaPool.length ? ideaPool : DEFAULT_REST_IDEAS));
-    onRequestNewTomato?.();
-  }, [open, ideaPool, onRequestNewTomato]);
+    if (open && !wasOpenRef.current) {
+      // opening edge: init once
+      setIdea(pickRandom(ideaPool.length ? ideaPool : DEFAULT_REST_IDEAS));
+    }
+    wasOpenRef.current = open;
+  }, [open]); // <-- only depend on open
 
   const castSpell = () => {
     if (casting) return;
@@ -111,6 +157,7 @@ export default function RestIdeasModal({
 
   const openIdeaModal = () => {
     setIdeaModalOpen(true);
+    setInputError("");
     window.requestAnimationFrame(() => {
       const el = document.getElementById("userIdeaModalInput") as HTMLInputElement | null;
       el?.focus();
@@ -120,23 +167,31 @@ export default function RestIdeasModal({
   const closeIdeaModal = () => setIdeaModalOpen(false);
 
   const onAdd = () => {
-    const v = input.trim();
-    if (!v) return;
+    const cleaned = sanitizeIdea(input);
+    if (!cleaned.ok) {
+      setInputError("Please enter a real rest idea (a short phrase or sentence).");
+      return;
+    }
 
+    const v = cleaned.value;
     const exists = userIdeas.some((x) => x.trim().toLowerCase() === v.toLowerCase());
     if (exists) {
       setInput("");
+      setInputError("");
+      setIdeaModalOpen(false);
       return;
     }
 
     persistUserIdeas([v, ...userIdeas]);
     setInput("");
+    setInputError("");
     setIdeaModalOpen(false);
   };
 
   const onClear = () => {
     persistUserIdeas([]);
     setInput("");
+    setInputError("");
   };
 
   const onInputKeyDown: React.KeyboardEventHandler<HTMLInputElement> = (e) => {
@@ -154,11 +209,11 @@ export default function RestIdeasModal({
         </button>
 
         <div className="restModalHeader">
+          {/* ✅ fixed tomato: purely display */}
           <img className="restModalTomato" src={tomatoSrc} alt="rest tomato" draggable={false} />
           <div className="restModalTitle">Things to do during rest</div>
         </div>
 
-        {/* V2 hero: idea + sage */}
         <div className="restModalBodyV2">
           <div className="restIdeaBoxV2" aria-live="polite">
             {idea}
@@ -184,7 +239,7 @@ export default function RestIdeasModal({
           </button>
         </div>
 
-        {/* Tips-style trigger (no box look; only left lightbulb) */}
+        {/* Tips-style trigger */}
         <div className="userIdeaTriggerRow">
           <button
             type="button"
@@ -221,11 +276,16 @@ export default function RestIdeasModal({
                   id="userIdeaModalInput"
                   className="userIdeaInput"
                   value={input}
-                  onChange={(e) => setInput(e.target.value)}
+                  onChange={(e) => {
+                    setInput(e.target.value);
+                    if (inputError) setInputError("");
+                  }}
                   onKeyDown={onInputKeyDown}
                   placeholder="Type your rest idea…"
                   aria-label="Your rest idea"
                 />
+
+                {inputError ? <div className="userIdeaError">{inputError}</div> : null}
 
                 <div className="userIdeaActions">
                   <button type="button" className="userIdeaBtn" onClick={onClear}>
