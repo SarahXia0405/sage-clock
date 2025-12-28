@@ -1,9 +1,10 @@
 :root{
-  --bg:#f4f4f4;
+  --bg:#ffffff;
   --panel:#e6e6e6;
-  --line:#b8b8b8;
   --ink:#111;
-  --muted:#666;
+  --muted:#6b6b6b;
+  --line:#b8b8b8;
+  --card: rgba(255,255,255,0.0);
   --shadow: 0 10px 28px rgba(0,0,0,0.08);
   --radius: 18px;
   font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
@@ -11,13 +12,10 @@
 
 body{
   margin:0;
-  background: #fff;
+  background: var(--bg);
   color: var(--ink);
 }
 
-/* ===========================
-   Split panels (resizable)
-=========================== */
 .page{
   width: 100%;
   min-height: 100vh;
@@ -25,14 +23,15 @@ body{
   align-items: stretch;
 }
 
-/* IMPORTANT: no fixed width here; App.tsx controls via inline flexBasis */
+/* ===== Panels (resizable) ===== */
 .left{
   background: var(--panel);
   padding: 18px;
   box-sizing: border-box;
   position: relative;
   flex: 0 0 auto;
-  min-width: 320px;
+  flex-shrink: 0;
+  min-width: 360px;
 }
 
 .right{
@@ -40,18 +39,16 @@ body{
   padding: 18px;
   box-sizing: border-box;
   flex: 0 0 auto;
-  min-width: 360px;
+  flex-shrink: 0;
+  min-width: 420px;
 }
 
-/* draggable splitter (replaces the old thick border-left) */
 .splitHandle{
   width: 10px;
   background: #cfcfcf;
   cursor: col-resize;
   position: relative;
-  flex: 0 0 10px;
 }
-
 .splitHandle::after{
   content:"";
   position:absolute;
@@ -63,28 +60,12 @@ body{
   background: rgba(0,0,0,0.22);
   transform: translate(-50%, -50%);
 }
+.splitHandle:hover{ background:#bfbfbf; }
 
-.splitHandle:hover{
-  background: #bfbfbf;
-}
-
-/* ===========================
-   Common UI
-=========================== */
+/* ===== Common ===== */
 .card{
-  background: rgba(255,255,255,0.0);
+  background: var(--card);
   border-radius: var(--radius);
-}
-
-.sectionTitle{
-  font-weight: 900;
-  letter-spacing: 0.02em;
-  font-size: 34px;
-}
-
-.mini{
-  font-size: 12px;
-  color: var(--muted);
 }
 
 .row{
@@ -93,87 +74,69 @@ body{
   gap: 10px;
 }
 
+.sectionTitle{
+  font-weight: 900;
+  letter-spacing: 0.01em;
+  font-size: 40px;
+}
+
+.mini{
+  font-size: 12px;
+  color: var(--muted);
+}
+
 .divider{
   height: 2px;
   background: var(--line);
   margin: 10px 0 14px;
 }
 
-.todoBox{
-  border-top: 2px solid var(--line);
-  padding-top: 10px;
-}
-
-.list{
+/* ===== Left: split scroll ===== */
+.leftSplit{
+  height: calc(100vh - 36px);
   display:flex;
   flex-direction: column;
-  gap: 14px;
-  margin-top: 10px;
+  gap: 16px;
 }
 
-.taskItem{
+.panelHeader{
   display:flex;
-  align-items:center;
+  align-items: flex-end;
   justify-content: space-between;
-  gap: 12px;
-}
-
-.taskLeft{
-  display:flex;
-  align-items:center;
   gap: 14px;
-  flex: 1;
-  min-height: 68px;
 }
 
-.taskText{
-  font-size: 18px;
-  font-weight: 700;
-  line-height: 1.2;
+.panelBox{
+  display:flex;
+  flex-direction: column;
+  min-height: 0;
 }
 
-/* keep class name, but hidden */
-.line{
-  display: none;
-  flex:1;
-  height: 2px;
-  background: var(--line);
-  opacity: 0.7;
+.panelScroll{
+  overflow-y: auto;
+  min-height: 0;
+  padding-right: 10px;
 }
 
-/* ===========================
-   Clover buttons (bigger)
-=========================== */
-.iconBtn{
-  width: 64px;
-  height: 64px;
-  border-radius: 14px;
-  border: 0;
-  background: transparent;
-  cursor: pointer;
-  padding: 0;
+.panelScroll::-webkit-scrollbar{ width: 10px; }
+.panelScroll::-webkit-scrollbar-thumb{
+  background: rgba(0,0,0,0.18);
+  border-radius: 999px;
 }
+.panelScroll::-webkit-scrollbar-track{ background: transparent; }
 
-.iconBtn img{
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-}
-
-/* ===========================
-   Progress bar row
-=========================== */
+/* ===== Progress bar + sage ===== */
 .progressRow{
   display:flex;
   align-items:center;
-  gap:14px;
-  margin-top: 8px;
+  gap: 14px;
+  margin-top: 6px;
 }
 
 .progressTrackWrap{
   position: relative;
   flex: 1;
-  height: 22px;
+  height: 26px;
   display:flex;
   align-items:center;
 }
@@ -185,7 +148,6 @@ body{
   border-radius: 999px;
   overflow:hidden;
 }
-
 .progressFill{
   height:100%;
   background: #111;
@@ -194,66 +156,189 @@ body{
 
 .sageWalkOnBar{
   position:absolute;
-  top: -18px;
+  top: -20px;
   transform: translateX(-50%);
-  height: 46px;
-  pointer-events: none;
+  height: 52px;
+  pointer-events:none;
+  user-select:none;
+  z-index: 5;
 }
 
 .progressPct{
-  width: 58px;
-  text-align: right;
+  width: 64px;
+  text-align:right;
   font-weight: 900;
-  font-size: 22px;
+  font-size: 26px;
 }
 
-/* ===========================
-   Left panel: top/bottom scrollable sections
-=========================== */
-.leftSplit{
-  display: flex;
+/* ===== Inputs / buttons ===== */
+.btn{
+  border: 0;
+  cursor: pointer;
+  border-radius: 16px;
+  padding: 10px 16px;
+  font-weight: 900;
+  background: #111;
+  color:#fff;
+}
+.btn.secondary{
+  background: #eee;
+  color:#111;
+  border: 1px solid rgba(0,0,0,0.12);
+}
+
+.taskInput{
+  flex: 1;
+  height: 56px;
+  border-radius: 18px;
+  border: 1px solid rgba(0,0,0,0.12);
+  padding: 0 18px;
+  font-size: 18px;
+  background: #fff;
+}
+
+/* ===== Task rows ===== */
+.list{
+  display:flex;
   flex-direction: column;
-  gap: 14px;
-  height: calc(100vh - 36px); /* padding 18*2 */
+  gap: 18px;
+  margin: 14px 0 0;
 }
 
-.panelHeader{
+.taskItem{
   display:flex;
   align-items:center;
   justify-content: space-between;
+  gap: 14px;
 }
 
-.panelBox{
-  background: rgba(255,255,255,0.0);
-  border-radius: var(--radius);
-  min-height: 0;              /* critical */
-  display: flex;              /* critical */
-  flex-direction: column;     /* critical */
+.taskLeft{
+  display:flex;
+  align-items:center;
+  gap: 16px;
+  flex: 1;
+  min-width: 0;
 }
 
-.panelScroll{
-  overflow-y: auto;
-  padding-right: 6px;
-  min-height: 0;              /* critical */
-  flex: 1;                    /* critical: take remaining height */
+.taskText{
+  font-size: 22px;
+  font-weight: 800;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-
-/* optional nicer scrollbars (webkit) */
-.panelScroll::-webkit-scrollbar{
-  width: 8px;
-}
-.panelScroll::-webkit-scrollbar-thumb{
-  background: rgba(0,0,0,0.18);
-  border-radius: 999px;
-}
-.panelScroll::-webkit-scrollbar-track{
+/* clover larger */
+.iconBtn{
+  width: 72px;
+  height: 72px;
+  border-radius: 16px;
+  border: 0;
   background: transparent;
+  cursor: pointer;
+  padding: 0;
+  flex: 0 0 auto;
+}
+.iconBtn img{
+  width:100%;
+  height:100%;
+  object-fit: contain;
 }
 
-/* ===========================
-   Right panel: timer UI
-=========================== */
+/* Right-side task pill */
+.taskPill{
+  width: 240px;
+  height: 78px;
+  border-radius: 18px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap: 12px;
+  font-weight: 900;
+  color: rgba(0,0,0,0.62);
+  background: rgba(0,0,0,0.04);
+  border: 1px solid rgba(0,0,0,0.10);
+  user-select:none;
+}
+.taskPill.dashed{
+  background: transparent;
+  border: 1px dashed rgba(0,0,0,0.22);
+}
+.taskPill.active{
+  background: rgba(0,0,0,0.06);
+  border: 1px solid rgba(0,0,0,0.18);
+  color: rgba(0,0,0,0.72);
+}
+.taskPill img{
+  height: 46px;
+  width: auto;
+  object-fit: contain;
+}
+
+/* ===== Watering / flower area ===== */
+.growRow{
+  position: relative;
+  height: 96px;
+  margin-top: 10px;
+}
+.flowerPot{
+  position:absolute;
+  left: 68%;
+  top: 18px;
+  transform: translateX(-50%);
+  height: 72px;
+  width: auto;
+  z-index: 2;
+  user-select:none;
+  pointer-events:none;
+}
+.waterCan{
+  position:absolute;
+  left: 82%;
+  top: -6px;            /* 保证在花上面 */
+  transform: translateX(-50%);
+  height: 54px;         /* 更大 */
+  width: auto;
+  z-index: 6;           /* 强制盖过花盆 */
+  user-select:none;
+  pointer-events:none;
+  opacity: 0;
+}
+.waterCan.pouring{
+  opacity: 1;
+  animation: pour 650ms ease-in-out 1;
+}
+
+@keyframes pour{
+  0%   { transform: translateX(-50%) rotate(0deg) translateY(0px); }
+  35%  { transform: translateX(-50%) rotate(-22deg) translateY(4px); }
+  70%  { transform: translateX(-50%) rotate(-18deg) translateY(2px); }
+  100% { transform: translateX(-50%) rotate(0deg) translateY(0px); }
+}
+
+/* Optional: a simple “sparkle / droplets” overlay */
+.waterSpark{
+  position:absolute;
+  left: 75%;
+  top: 24px;
+  width: 120px;
+  height: 60px;
+  z-index: 7;
+  pointer-events:none;
+  opacity: 0;
+}
+.waterSpark.on{
+  opacity: 1;
+  animation: spark 650ms ease-out 1;
+}
+@keyframes spark{
+  0%{ opacity:0; transform: translateY(-6px); }
+  35%{ opacity:1; }
+  100%{ opacity:0; transform: translateY(10px); }
+}
+
+/* ===== Right timer digits ===== */
 .timerDigits{
   display:flex;
   gap: 12px;
@@ -261,644 +346,149 @@ body{
   align-items: center;
   margin-top: 10px;
 }
-
 .digitBox{
   width: 92px;
   height: 130px;
-  border-radius: 20px;
+  border-radius: 22px;
   background:#111;
   color:#fff;
   display:flex;
   align-items:center;
   justify-content:center;
-  font-size: 64px;
+  font-size: 68px;
   font-weight: 900;
   box-shadow: var(--shadow);
 }
 
+/* tomato button: NO background */
+.tomatoBtn{
+  border: 0;
+  padding: 0;
+  background: transparent;
+  cursor: pointer;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+.tomatoBtn:disabled{
+  cursor: default;
+  opacity: 0.6;
+}
+
+/* Scene stage */
 .scene{
   margin-top: 18px;
   border-radius: 22px;
   border: 1px solid rgba(0,0,0,0.08);
   padding: 14px;
-  min-height: 360px;
-  position: relative;
+  min-height: 420px;
 }
-
-.scene img{
-  max-width: 100%;
-  height: auto;
-}
-
-.clockNow{
-  position:absolute;
-  right: 14px;
-  bottom: 14px;
-  background: rgba(255,255,255,0.9);
-  border: 1px solid rgba(0,0,0,0.12);
-  border-radius: 14px;
-  padding: 10px 12px;
-  font-weight: 900;
-}
-
-/* Top right controls */
-.topControls{
-  display:flex;
-  justify-content: flex-end;
-  gap: 10px;
-}
-
-.btn{
-  border: 0;
-  cursor: pointer;
-  border-radius: 14px;
-  padding: 10px 14px;
-  font-weight: 800;
-  background: #111;
-  color:#fff;
-}
-
-.btn.secondary{
-  background: #eaeaea;
-  color:#111;
-  border: 1px solid rgba(0,0,0,0.12);
-}
-
-/* Overlay analog clock on the clock sage is holding */
 .sceneStage{
   position: relative;
   width: 100%;
-  display: block;
+  display:flex;
+  justify-content:center;
+  align-items:flex-start;
 }
-
 .sceneImg{
-  display: block;
-  width: 100%;
-  height: auto;
-}
-
-.sageHeldClock{
-  position: absolute;
-
-  /* 先用一个很夸张的值，确保你能看到它移动 */
-  left: 50%;
-  top: 20%;
-
-  transform: translate(-50%, -50%);
-  z-index: 10;
-  pointer-events: none;
-}
-
-
-
-/* Overlay analog clock on the held clock position (relative to image) */
-.sageHeldClock{
-  position: absolute;
-  left: 52%;
-  top: 50%;
-  transform: translate(-50%, -50%);
-  z-index: 10;
-  pointer-events: none;
-}
-
-
-.sceneStage{
-  position: relative !important;
-  outline: 4px solid rgba(255,0,0,0.25); /* debug */
-}
-
-.sageHeldClock{
-  outline: 4px solid rgba(0,128,255,0.25); /* debug */
-}
-
-.sceneStage img.sceneImg{
-  height: auto !important;
-}
-
-/* clickable tomato: no background, only slight lift */
-.restTomatoClickable:hover{
-  transform: translateY(-1px);
-}
-.restTomatoClickable:active{
-  transform: translateY(0px);
-}
-
-/* true modal */
-.modalOverlay{
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,0.35);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 9999;
-}
-
-.modalCard{
-  width: min(860px, calc(100vw - 48px));
-  height: min(460px, calc(100vh - 80px));
-  background: #bfbfbf;
-  border-radius: 32px;
-  box-shadow: 0 22px 60px rgba(0,0,0,0.22);
-  position: relative;
-  padding: 28px 30px;
-}
-
-.modalClose{
-  position: absolute;
-  top: 16px;
-  right: 18px;
-  width: 44px;
-  height: 44px;
-  border-radius: 14px;
-  border: 0;
-  background: rgba(255,255,255,0.35);
-  cursor: pointer;
-  font-size: 18px;
-  font-weight: 900;
-}
-
-.modalHeader{
-  display:flex;
-  align-items:center;
-  gap: 18px;
-}
-
-.modalTomato{
-  width: 150px;
-  height: 110px;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-}
-
-.modalTitle{
-  font-size: 46px;
-  font-weight: 900;
-  letter-spacing: 0.01em;
-  color: #111;
-}
-
-.modalBody{
-  margin-top: 28px;
-  display:flex;
-  align-items:center;
-  justify-content: space-between;
-  gap: 24px;
-}
-
-.modalIdeaBox{
-  flex: 1;
-  height: 170px;
-  border-radius: 22px;
-  border: 2px solid rgba(0,0,0,0.75);
-  background: rgba(255,255,255,0.10);
-  padding: 18px 20px;
-  display:flex;
-  align-items:center;
-}
-
-.modalIdeaText{
-  font-size: 24px;
-  font-weight: 800;
-  color: #111;
-  line-height: 1.25;
-}
-
-
-.diceBtn img{
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-}
-
-.diceFallback{
-  position:absolute;
-  inset:0;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  font-size: 64px;
-}
-
-
-/* ---------- Watering can animation ---------- */
-.wateringCan{
-  transform-origin: 75% 80%;
-}
-
-@keyframes pourWater {
-  0%   { transform: translateX(0px) rotate(0deg); opacity: 1; }
-  20%  { transform: translateX(-26px) rotate(-12deg); }
-  55%  { transform: translateX(-26px) rotate(-18deg); }
-  100% { transform: translateX(0px) rotate(0deg); opacity: 1; }
-}
-
-.wateringCan.watering{
-  animation: pourWater 0.9s ease-in-out;
-}
-
-/* ---------- Dice (no dice.png) ---------- */
-.diceBtn{
-  width: 180px;
-  height: 180px;
-  border-radius: 26px;
-  border: 0;
-  background: transparent;
-  cursor: pointer;
-  position: relative;
-  transform-origin: 50% 60%;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-}
-
-.diceEmoji{
-  font-size: 92px;
-  line-height: 1;
-}
-
-@keyframes diceShake {
-  0%   { transform: rotate(0deg) translate(0,0); }
-  20%  { transform: rotate(-10deg) translate(-2px, 1px); }
-  40%  { transform: rotate(12deg) translate(3px, -1px); }
-  60%  { transform: rotate(-8deg) translate(-2px, -1px); }
-  80%  { transform: rotate(10deg) translate(2px, 1px); }
-  100% { transform: rotate(0deg) translate(0,0); }
-}
-
-.diceBtn.rolling{
-  animation: diceShake 0.35s ease-in-out;
-}
-
-/* ---------- Good job garden layout (flower + can closer) ---------- */
-.gardenWrap{
-  position: relative;
-  width: 260px;
-  height: 92px;
-}
-
-.gardenFlower{
-  position: absolute;
-  left: 0px;
-  top: 6px;
-  height: 78px;
-  object-fit: contain;
-}
-
-.gardenCan{
-  position: absolute;
-  left: 165px;   /* 更靠近花盆 */
-  top: -2px;     /* 往上提一点 */
-  height: 78px;  /* 水壶变大 */
-  object-fit: contain;
-  transform-origin: 70% 75%;
-}
-
-@keyframes pourWater {
-  0%   { transform: translateX(0px) rotate(0deg); }
-  20%  { transform: translateX(-18px) rotate(-12deg); }
-  55%  { transform: translateX(-18px) rotate(-18deg); }
-  100% { transform: translateX(0px) rotate(0deg); }
-}
-
-.gardenCan.watering{
-  animation: pourWater 0.95s ease-in-out;
-}
-
-/* ---------- Water drops (CSS particles) ---------- */
-.waterDrops{
-  position: absolute;
-  left: 182px; /* 从壶嘴附近开始落 */
-  top: 46px;
-  width: 60px;
-  height: 60px;
-  pointer-events: none;
-}
-
-.drop{
-  position: absolute;
-  width: 6px;
-  height: 10px;
-  border-radius: 999px;
-  background: rgba(255,255,255,0.92);
-  box-shadow: 0 0 10px rgba(255,255,255,0.8);
-  opacity: 0;
-  animation: dropFall 0.75s ease-in-out forwards;
-}
-
-@keyframes dropFall{
-  0%   { transform: translate(0, 0) scale(0.8); opacity: 0; }
-  15%  { opacity: 1; }
-  100% { transform: translate(-28px, 30px) scale(1); opacity: 0; }
-}
-
-.drop.d1{ left: 6px;  top: 0px;  animation-delay: 0.00s; }
-.drop.d2{ left: 16px; top: 4px;  animation-delay: 0.05s; }
-.drop.d3{ left: 26px; top: 1px;  animation-delay: 0.10s; }
-.drop.d4{ left: 10px; top: 10px; animation-delay: 0.16s; }
-.drop.d5{ left: 22px; top: 12px; animation-delay: 0.20s; }
-
-/* ---------- Sparkles ---------- */
-.sparkles{
-  position: absolute;
-  left: 104px; /* 花附近 */
-  top: 0px;
-  width: 120px;
-  height: 90px;
-  pointer-events: none;
-}
-
-.sp{
-  position: absolute;
-  width: 10px;
-  height: 10px;
-  border-radius: 2px;
-  background: rgba(255,255,255,0.0);
-  box-shadow:
-    0 0 0 2px rgba(255,255,255,0.92),
-    0 0 18px rgba(255,255,255,0.9);
-  transform: rotate(45deg) scale(0.6);
-  opacity: 0;
-  animation: sparklePop 0.75s ease-out forwards;
-}
-
-@keyframes sparklePop{
-  0%   { opacity: 0; transform: translate(0,0) rotate(45deg) scale(0.4); }
-  35%  { opacity: 1; }
-  100% { opacity: 0; transform: translate(-6px,-10px) rotate(45deg) scale(1.0); }
-}
-
-.sp.s1{ left: 18px; top: 18px; animation-delay: 0.00s; }
-.sp.s2{ left: 56px; top: 10px; animation-delay: 0.08s; }
-.sp.s3{ left: 86px; top: 26px; animation-delay: 0.14s; }
-
-/* ---------- Right panel: planted flower positioning (inside sceneStage) ---------- */
-.sceneStage{
-  position: relative;
-  width: 100%;
-  height: 100%;
-}
-
-.sceneImg{
-  width: 100%;
+  width: min(560px, 100%);
   height: auto;
   display:block;
 }
 
-/* 这朵花是“种下”的效果，贴在 sage 右侧 */
-.plantedFlower{
-  position: absolute;
-  left: 70%;
-  top: 62%;
-  transform: translate(-50%, -50%);
-  height: 84px;
-  object-fit: contain;
-  z-index: 12;
-  pointer-events: none;
-}
-
-/* ========= ADD/OVERRIDE BELOW (paste at END of styles.css) ========= */
-
-/* Make left split scroll actually work */
-.leftSplit{
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-  height: calc(100vh - 36px); /* padding 18*2 */
-}
-
-.panelScroll{
-  overflow-y: auto;
-  padding-right: 6px;
-}
-
-/* --- Set-as-current button with sage_read always visible --- */
-.sageDrop{
-  width: 220px;
-  height: 68px;
-  border-radius: 18px;
-  border: 1px dashed rgba(0,0,0,0.18);
-  background: rgba(255,255,255,0.0);
+/* ===== Modal ===== */
+.modalOverlay{
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.25);
   display:flex;
   align-items:center;
   justify-content:center;
-  gap: 12px;
+  z-index: 9999;
+}
+
+.modalCard{
+  width: min(980px, 92vw);
+  height: min(560px, 82vh);
+  background: #bfbfbf;
+  border-radius: 40px;
+  box-shadow: 0 22px 60px rgba(0,0,0,0.25);
+  position: relative;
+  padding: 36px 40px;
+  overflow:hidden;
+}
+
+.modalClose{
+  position:absolute;
+  right: 20px;
+  top: 16px;
+  width: 54px;
+  height: 54px;
+  border-radius: 18px;
+  border: 0;
+  background: rgba(255,255,255,0.55);
+  font-size: 26px;
   font-weight: 900;
-  color: rgba(0,0,0,0.62);
   cursor: pointer;
 }
 
-.sageDrop.active{
-  background: rgba(0,0,0,0.04);
-  border-style: solid;
+.modalTitleRow{
+  display:flex;
+  align-items:center;
+  gap: 22px;
 }
 
-.sageReadIcon{
-  height: 44px;
+.modalTitle{
+  font-size: 56px;
+  font-weight: 1000;
+  letter-spacing: 0.01em;
+}
+
+.modalIdeaBox{
+  margin-top: 26px;
+  width: 72%;
+  height: 280px;
+  border-radius: 26px;
+  border: 3px solid rgba(0,0,0,0.7);
+  padding: 28px;
+  display:flex;
+  align-items:center;
+  font-size: 40px;
+  font-weight: 900;
+  line-height: 1.2;
+  background: rgba(255,255,255,0.18);
+}
+
+.diceBtn{
+  position:absolute;
+  right: 64px;
+  top: 210px;
+  width: 160px;
+  height: 160px;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  padding: 0;
+}
+.diceBtn img{
+  width:100%;
+  height:100%;
   object-fit: contain;
 }
 
-/* --- Ready flower (draggable) small --- */
-.readyFlower{
-  height: 54px;
-  width: auto;
-  object-fit: contain;
-  cursor: grab;
+.diceShake{
+  animation: shake 420ms ease-in-out 1;
+}
+@keyframes shake{
+  0%{ transform: rotate(0deg) translate(0,0); }
+  20%{ transform: rotate(-10deg) translate(-4px, 2px); }
+  40%{ transform: rotate(10deg) translate(4px, -2px); }
+  60%{ transform: rotate(-6deg) translate(-3px, 1px); }
+  80%{ transform: rotate(6deg) translate(3px, -1px); }
+  100%{ transform: rotate(0deg) translate(0,0); }
 }
 
-/* --- Good job garden HUD: POT bottom + CAN ABOVE POT --- */
-.gardenHud{
-  position: relative;
-  width: 220px;
-  height: 84px;
-  margin-left: 12px;
-}
-
-/* pot sits bottom-center */
-.gardenPot{
-  position: absolute;
-  left: 50%;
-  bottom: 0px;
-  transform: translateX(-50%);
-  height: 62px;
-  width: auto;
-  object-fit: contain;
-}
-
-/* can sits ABOVE pot, slightly right so it "pours" onto pot */
-.gardenCan{
-  position: absolute;
-  left: 72%;
-  top: -8px;
-  transform: translate(-50%, 0);
-  height: 46px;          /* bigger than before */
-  width: auto;
-  object-fit: contain;
-  transform-origin: 70% 70%;
-}
-
-/* watering animation: can wiggle + tiny pour movement */
-.gardenHud.watering .gardenCan{
-  animation: canWiggle 0.9s ease-in-out;
-}
-
-@keyframes canWiggle{
-  0%   { transform: translate(-50%, 0) rotate(0deg); }
-  20%  { transform: translate(-50%, 0) rotate(-10deg); }
-  45%  { transform: translate(-50%, 2px) rotate(-16deg); }
-  70%  { transform: translate(-50%, 0) rotate(-8deg); }
-  100% { transform: translate(-50%, 0) rotate(0deg); }
-}
-
-/* droplets + sparkles (pure CSS) */
-.waterFX{
-  position:absolute;
-  left: 63%;
-  top: 18px;     /* just under the can spout area */
-  width: 80px;
-  height: 70px;
-  pointer-events:none;
-}
-
-.drop{
-  position:absolute;
-  width: 6px;
-  height: 10px;
-  border-radius: 999px;
-  background: rgba(255,255,255,0.95);
-  filter: drop-shadow(0 2px 2px rgba(0,0,0,0.25));
-  animation: dropFall 0.7s ease-in-out forwards;
-}
-
-.drop.d1{ left: 14px; top: 2px; animation-delay: 0.00s; }
-.drop.d2{ left: 28px; top: 0px; animation-delay: 0.08s; }
-.drop.d3{ left: 42px; top: 4px; animation-delay: 0.16s; }
-
-@keyframes dropFall{
-  0%   { transform: translateY(0) scale(1); opacity: 0.0; }
-  10%  { opacity: 1; }
-  80%  { opacity: 1; }
-  100% { transform: translateY(44px) scale(0.85); opacity: 0.0; }
-}
-
-.spark{
-  position:absolute;
-  width: 10px;
-  height: 10px;
-  border-radius: 999px;
-  background: rgba(255,255,255,0.95);
-  box-shadow: 0 0 12px rgba(255,255,255,0.9);
-  animation: sparkle 0.8s ease-in-out forwards;
-}
-
-.spark.s1{ left: 18px; top: 30px; animation-delay: 0.06s; }
-.spark.s2{ left: 44px; top: 36px; animation-delay: 0.12s; }
-
-@keyframes sparkle{
-  0%   { transform: scale(0.4); opacity: 0.0; }
-  25%  { opacity: 1; transform: scale(1); }
-  70%  { opacity: 1; transform: scale(0.9); }
-  100% { opacity: 0; transform: scale(0.4); }
-}
-
-/* --- Scene: remove debug red frame, keep scaling stable --- */
-.sceneStage{
-  position: relative;
-  width: 100%;
-  overflow: hidden;
-  border-radius: 18px;
-}
-
-.sceneImg{
-  width: 100%;
-  height: auto;
-  display: block;
-}
-
-/* Clock position uses % so it scales with image */
-.sageHeldClock{
-  position: absolute !important;
-  left: 52%;
-  top: 70%;
-  transform: translate(-50%, -50%);
-  z-index: 10;
-  pointer-events: none;
-}
-
-/* planted flower SMALL (same scale as left) */
-.plantedFlower{
-  position: absolute;
-  left: 74%;
-  top: 68%;
-  transform: translate(-50%, -50%);
-  height: 62px;
-  width: auto;
-  object-fit: contain;
-  z-index: 12;
-  pointer-events: none;
-}
-
-/* ===== FINAL OVERRIDES (paste at END) ===== */
-
-/* Ensure scroll areas work */
-.panelScroll{
-  overflow-y: auto !important;
-}
-
-/* If you曾经给 sceneStage 加过红框/outline，这里强制清掉 */
-.sceneStage{
-  border: none !important;
-  outline: none !important;
-  box-shadow: none !important;
-}
-
-/* watering FX particles (pure CSS) */
-@keyframes canWiggle{
-  0%   { transform: translate(-50%, 0) rotate(0deg); }
-  20%  { transform: translate(-50%, 0) rotate(-10deg); }
-  45%  { transform: translate(-50%, 2px) rotate(-16deg); }
-  70%  { transform: translate(-50%, 0) rotate(-8deg); }
-  100% { transform: translate(-50%, 0) rotate(0deg); }
-}
-
-.drop{
-  position:absolute;
-  width: 6px;
-  height: 10px;
-  border-radius: 999px;
-  background: rgba(255,255,255,0.95);
-  filter: drop-shadow(0 2px 2px rgba(0,0,0,0.25));
-  animation: dropFall 0.7s ease-in-out forwards;
-}
-
-.drop.d1{ left: 14px; top: 2px; animation-delay: 0.00s; }
-.drop.d2{ left: 30px; top: 0px; animation-delay: 0.08s; }
-.drop.d3{ left: 46px; top: 4px; animation-delay: 0.16s; }
-
-@keyframes dropFall{
-  0%   { transform: translateY(0) scale(1); opacity: 0.0; }
-  10%  { opacity: 1; }
-  80%  { opacity: 1; }
-  100% { transform: translateY(44px) scale(0.85); opacity: 0.0; }
-}
-
-.spark{
-  position:absolute;
-  width: 10px;
-  height: 10px;
-  border-radius: 999px;
-  background: rgba(255,255,255,0.95);
-  box-shadow: 0 0 12px rgba(255,255,255,0.9);
-  animation: sparkle 0.8s ease-in-out forwards;
-}
-
-.spark.s1{ left: 20px; top: 30px; animation-delay: 0.06s; }
-.spark.s2{ left: 50px; top: 36px; animation-delay: 0.12s; }
-
-@keyframes sparkle{
-  0%   { transform: scale(0.4); opacity: 0.0; }
-  25%  { opacity: 1; transform: scale(1); }
-  70%  { opacity: 1; transform: scale(0.9); }
-  100% { opacity: 0; transform: scale(0.4); }
+/* nicer scroll inside modal for long ideas (if needed) */
+.modalIdeaBox{
+  overflow:auto;
 }
