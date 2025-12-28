@@ -15,6 +15,9 @@ body{
   color: var(--ink);
 }
 
+/* ===========================
+   Split panels (resizable)
+=========================== */
 .page{
   width: 100%;
   min-height: 100vh;
@@ -22,22 +25,52 @@ body{
   align-items: stretch;
 }
 
+/* IMPORTANT: no fixed width here; App.tsx controls via inline flexBasis */
 .left{
-  width: 58%;
   background: var(--panel);
   padding: 18px;
   box-sizing: border-box;
   position: relative;
+  flex: 0 0 auto;
+  min-width: 320px;
 }
 
 .right{
-  width: 42%;
   background: #fff;
   padding: 18px;
   box-sizing: border-box;
-  border-left: 10px solid #cfcfcf;
+  flex: 0 0 auto;
+  min-width: 360px;
 }
 
+/* draggable splitter (replaces the old thick border-left) */
+.splitHandle{
+  width: 10px;
+  background: #cfcfcf;
+  cursor: col-resize;
+  position: relative;
+  flex: 0 0 10px;
+}
+
+.splitHandle::after{
+  content:"";
+  position:absolute;
+  top: 50%;
+  left: 50%;
+  width: 4px;
+  height: 56px;
+  border-radius: 999px;
+  background: rgba(0,0,0,0.22);
+  transform: translate(-50%, -50%);
+}
+
+.splitHandle:hover{
+  background: #bfbfbf;
+}
+
+/* ===========================
+   Common UI
+=========================== */
 .card{
   background: rgba(255,255,255,0.0);
   border-radius: var(--radius);
@@ -90,7 +123,7 @@ body{
   align-items:center;
   gap: 14px;
   flex: 1;
-  min-height: 68px; /* 让 clover 变大后对齐舒服 */
+  min-height: 68px;
 }
 
 .taskText{
@@ -99,7 +132,7 @@ body{
   line-height: 1.2;
 }
 
-/* 原本的长线先保留类名，默认不显示（避免 TSX 没删时炸布局） */
+/* keep class name, but hidden */
 .line{
   display: none;
   flex:1;
@@ -108,9 +141,9 @@ body{
   opacity: 0.7;
 }
 
-/* ---------------------------
+/* ===========================
    Clover buttons (bigger)
---------------------------- */
+=========================== */
 .iconBtn{
   width: 64px;
   height: 64px;
@@ -127,11 +160,9 @@ body{
   object-fit: contain;
 }
 
-/* ---------------------------
-   Progress bar row:
-   - bar + sage on bar
-   - percent on the right
---------------------------- */
+/* ===========================
+   Progress bar row
+=========================== */
 .progressRow{
   display:flex;
   align-items:center;
@@ -142,7 +173,7 @@ body{
 .progressTrackWrap{
   position: relative;
   flex: 1;
-  height: 22px; /* 给 sage 站位 */
+  height: 22px;
   display:flex;
   align-items:center;
 }
@@ -176,9 +207,49 @@ body{
   font-size: 22px;
 }
 
-/* ---------------------------
+/* ===========================
+   Left panel: top/bottom scrollable sections
+=========================== */
+.leftSplit{
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  height: calc(100vh - 36px); /* padding 18*2 */
+}
+
+.panelBox{
+  background: rgba(255,255,255,0.0);
+  border-radius: var(--radius);
+  min-height: 0; /* critical for inner scroll */
+}
+
+.panelHeader{
+  display:flex;
+  align-items:center;
+  justify-content: space-between;
+}
+
+.panelScroll{
+  overflow-y: auto;
+  padding-right: 6px;
+  min-height: 0;
+}
+
+/* optional nicer scrollbars (webkit) */
+.panelScroll::-webkit-scrollbar{
+  width: 8px;
+}
+.panelScroll::-webkit-scrollbar-thumb{
+  background: rgba(0,0,0,0.18);
+  border-radius: 999px;
+}
+.panelScroll::-webkit-scrollbar-track{
+  background: transparent;
+}
+
+/* ===========================
    Right panel: timer UI
---------------------------- */
+=========================== */
 .timerDigits{
   display:flex;
   gap: 12px;
@@ -247,40 +318,4 @@ body{
   background: #eaeaea;
   color:#111;
   border: 1px solid rgba(0,0,0,0.12);
-}
-
-/* Left panel layout: top(todo) + bottom(done) fixed ratio and scrollable */
-.leftSplit{
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-  height: calc(100vh - 36px); /* left padding 18*2 */
-}
-
-.panelBox{
-  background: rgba(255,255,255,0.0);
-  border-radius: var(--radius);
-}
-
-.panelHeader{
-  display:flex;
-  align-items:center;
-  justify-content: space-between;
-}
-
-.panelScroll{
-  overflow-y: auto;
-  padding-right: 6px; /* avoid scrollbar overlaying content */
-}
-
-/* optional nicer scrollbars (works in webkit) */
-.panelScroll::-webkit-scrollbar{
-  width: 8px;
-}
-.panelScroll::-webkit-scrollbar-thumb{
-  background: rgba(0,0,0,0.18);
-  border-radius: 999px;
-}
-.panelScroll::-webkit-scrollbar-track{
-  background: transparent;
 }
