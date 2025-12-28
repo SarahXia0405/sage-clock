@@ -1,26 +1,26 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 
-export const DEFAULT_REST_IDEAS: string[] = [
-  "Pick a color and find 10 things that match it around you.",
-  "Do a 60-second ‘silent walk’ — no phone, just walk and breathe.",
-  "Make a tiny ‘victory list’: write 3 things you already did today.",
-  "Roll your shoulders 10x + neck circles 5x each side.",
-  "Hydration quest: drink a full glass, then refill your bottle.",
-  "Desk reset: clear exactly 10 items (stop at 10).",
-  "Eye spa: look at something far away for 30s, then blink slowly 10x.",
-  "Do 20 jumping jacks OR 10 squats OR 30s wall sit (pick one).",
-  "Set a 5-min ‘mini tidy’: only the surface you can touch while seated.",
-  "Make the next work block easy: open the exact doc + tabs you need.",
-  "Write one sentence: ‘When I return, I will…’ (the next smallest step).",
-  "‘Posture check’: feet flat, shoulders down, jaw unclenched, exhale.",
-  "Quick hand care: stretch fingers, rotate wrists, shake hands loose.",
-  "Random kindness: send a 1-line message to someone you like.",
-  "Breathing game: 4 seconds in, 6 seconds out × 8 rounds.",
-  "Snack prep: wash a fruit / make tea (only if it’s actually quick).",
-  "Music reset: play one song, just listen (no scrolling).",
-  "5-minute brain dump: write everything on your mind, no judging.",
-  "Micro-meditation: notice 5 things you see, 4 feel, 3 hear, 2 smell, 1 taste.",
-  "Stand up and do a ‘reach the ceiling’ stretch for 20 seconds × 2."
+const DEFAULT_REST_IDEAS: string[] = [
+  "Pick a color and find 10 matching objects nearby.",
+  "Do a 60-second silent walk (no phone).",
+  "Write 3 tiny wins from today (even small ones).",
+  "Shoulder + neck reset: 10 rolls + 5 circles each side.",
+  "Hydration quest: drink a full glass, then refill.",
+  "Desk mini-game: put exactly 10 things back in place.",
+  "Eye spa: look far 30s, blink slowly 10x.",
+  "Choose one: 20 jumping jacks / 10 squats / 30s wall sit.",
+  "Make next block easy: open the doc + tabs you’ll need.",
+  "One-sentence plan: ‘When I return, I will ___’",
+  "Breathing: 4s in, 6s out × 8 rounds.",
+  "Music reset: one song, just listen (no scrolling).",
+  "5-min brain dump: write everything on your mind.",
+  "Mindfulness: 5 see / 4 feel / 3 hear / 2 smell / 1 taste.",
+  "Stretch hands: finger pulls + wrist circles 30s each.",
+  "Quick tidy: only the space within arm’s reach.",
+  "Compliment yourself: write one line you’d tell a friend.",
+  "Fresh air: open window or stand outside for 1 minute.",
+  "Make tea / wash fruit (only if it stays under 5 min).",
+  "Posture check: feet flat, jaw unclench, long exhale."
 ];
 
 function randPick<T>(arr: T[]) {
@@ -30,35 +30,55 @@ function randPick<T>(arr: T[]) {
 export default function RestIdeasModal({
   open,
   onClose,
-  ideas = DEFAULT_REST_IDEAS,
   tomatoSrc,
-  onRollTomato
+  onRequestNewTomato,
+  ideas = DEFAULT_REST_IDEAS
 }: {
   open: boolean;
   onClose: () => void;
-  ideas?: string[];
   tomatoSrc: string;
-  onRollTomato: () => void;
+  onRequestNewTomato: () => void;
+  ideas?: string[];
 }) {
   const [idea, setIdea] = useState<string>("");
+  const [rolling, setRolling] = useState(false);
 
-  const firstIdea = useMemo(() => randPick(ideas), [ideas]);
+  const initial = useMemo(() => randPick(ideas), [ideas]);
 
-  React.useEffect(() => {
-    if (open) setIdea(firstIdea);
+  useEffect(() => {
+    if (!open) return;
+    setIdea(initial);
+    setRolling(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
-  const onRoll = () => {
-    setIdea(randPick(ideas));
-    onRollTomato(); // ✅骰子同时换番茄
+  useEffect(() => {
+    if (!open) return;
+
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [open, onClose]);
+
+  const roll = () => {
+    if (rolling) return;
+    setRolling(true);
+
+    // 短动画结束后再出结果
+    window.setTimeout(() => {
+      setIdea(randPick(ideas));
+      onRequestNewTomato();
+      setRolling(false);
+    }, 350);
   };
 
   if (!open) return null;
 
   return (
-    <div className="modalOverlay" role="dialog" aria-modal="true">
-      <div className="modalCard">
+    <div className="modalOverlay" role="dialog" aria-modal="true" onMouseDown={onClose}>
+      <div className="modalCard" onMouseDown={(e) => e.stopPropagation()}>
         <button className="modalClose" onClick={onClose} aria-label="Close">
           ✕
         </button>
@@ -68,9 +88,7 @@ export default function RestIdeasModal({
             <img
               src={tomatoSrc}
               alt="rest tomato"
-              onError={(e) => {
-                (e.currentTarget as HTMLImageElement).style.display = "none";
-              }}
+              style={{ width: "100%", height: "100%", objectFit: "contain" }}
             />
           </div>
 
@@ -82,7 +100,7 @@ export default function RestIdeasModal({
             <div className="modalIdeaText">{idea || "Roll for a rest idea."}</div>
           </div>
 
-          <button className="diceBtn" onClick={onRoll} title="Roll a new idea">
+          <button className={`diceBtn ${rolling ? "rolling" : ""}`} onClick={roll} title="Roll">
             <img
               src="/assets/dice.png"
               alt="dice"
