@@ -2,6 +2,7 @@ import React, { useMemo, useState } from "react";
 import type { AppState } from "../types";
 import { timerControl, timerSet } from "../api";
 import AnalogClock from "./AnalogClock";
+import RestIdeasModal from "./RestIdeasModal";
 
 function fmt(sec: number) {
   const s = Math.max(0, Math.floor(sec));
@@ -15,7 +16,8 @@ function randInt(min: number, max: number) {
 }
 
 export default function RightTimerPanel({
-  state
+  state,
+  onState
 }: {
   state: AppState;
   onState: (s: AppState) => void;
@@ -23,14 +25,17 @@ export default function RightTimerPanel({
   const [workMin, setWorkMin] = useState(25);
   const [restMin, setRestMin] = useState(5);
 
+  // work: 1..6, rest: 1..5
   const [workFrame, setWorkFrame] = useState<number>(() => randInt(1, 6));
   const [restFrame, setRestFrame] = useState<number>(() => randInt(1, 5));
 
-  // SESSION ONLY
-  const [planted, setPlanted] = useState(false);
+  // ✅ modal state + modal tomato frame (1..5)
+  const [restModalOpen, setRestModalOpen] = useState(false);
+  const [modalRestFrame, setModalRestFrame] = useState<number>(() => randInt(1, 5));
 
   const remaining = state.timer.remaining_sec;
-  const mode = state.timer.mode;
+  const mode = state.timer.mode; // "work" | "rest"
+  const isRest = mode === "rest";
 
   const digits = useMemo(() => {
     const [m, s] = fmt(remaining).split(":");
@@ -54,26 +59,24 @@ export default function RightTimerPanel({
     await timerControl("start");
   };
 
+  const openRestModal = () => {
+    if (!isRest) return;
+    setModalRestFrame(randInt(1, 5)); // 每次打开随机一个番茄
+    setRestModalOpen(true);
+  };
+
   return (
     <div>
       <div className="topControls">
-        <button className="btn secondary" onClick={onApply}>
-          Set
-        </button>
+        <button className="btn secondary" onClick={onApply}>Set</button>
 
         {!state.timer.running ? (
-          <button className="btn" onClick={onStart}>
-            Start
-          </button>
+          <button className="btn" onClick={onStart}>Start</button>
         ) : (
-          <button className="btn" onClick={() => timerControl("pause")}>
-            Pause
-          </button>
+          <button className="btn" onClick={() => timerControl("pause")}>Pause</button>
         )}
 
-        <button className="btn secondary" onClick={() => timerControl("skip")}>
-          Skip
-        </button>
+        <button className="btn secondary" onClick={() => timerControl("skip")}>Skip</button>
       </div>
 
       <div style={{ display: "flex", alignItems: "center", gap: 14, marginTop: 10 }}>
@@ -115,12 +118,22 @@ export default function RightTimerPanel({
       </div>
 
       <div style={{ marginTop: 14, display: "flex", alignItems: "center", gap: 16 }}>
+        {/* ✅ 不加背景：纯 img，可点区域就是图片本身 */}
         <img
           src={tomatoSrc}
           alt="tomato"
-          style={{ width: 90, height: 90, objectFit: "contain" }}
-          onError={(e) => ((e.currentTarget as HTMLImageElement).style.display = "none")}
-          draggable={false}
+          className={isRest ? "restTomatoClickable" : ""}
+          onClick={openRestModal}
+          style={{
+            width: 90,
+            height: 90,
+            objectFit: "contain",
+            cursor: isRest ? "pointer" : "default"
+          }}
+          onError={(e) => {
+            (e.currentTarget as HTMLImageElement).style.display = "none";
+          }}
+          title={isRest ? "Click for a rest idea" : ""}
         />
 
         <div className="timerDigits">
@@ -134,63 +147,52 @@ export default function RightTimerPanel({
 
       <div className="scene">
         <div className="mini" style={{ marginBottom: 8 }}>
-          Scene · Drop your flower onto the sage to plant
+          Scene · Real-time clock is shown on sage’s clock
         </div>
 
+        {/* ✅ 固定 sceneStage 缩放基准，避免 panel 拉伸导致钟不同步 */}
         <div
+          className="sceneStage"
           style={{
-            position: "relative",
-            width: "100%",
-            overflow: "hidden",
-            borderRadius: 18
-          }}
-          onDragOver={(e) => e.preventDefault()}
-          onDrop={(e) => {
-            const v = e.dataTransfer.getData("text/plain");
-            if (v === "flower_ready") setPlanted(true);
+            maxWidth: 560,
+            margin: "0 auto",
+            position: "relative"
           }}
         >
           <img
+            className="sceneImg"
             src="/assets/scene_sage.png"
             alt="scene"
-            draggable={false}
-            style={{ width: "100%", height: "auto", display: "block" }}
+            style={{
+              width: "100%",
+              height: "auto",
+              display: "block",
+              objectFit: "contain"
+            }}
           />
 
-          {/* Clock on sage’s held clock (lock by inline style, avoid CSS conflicts) */}
           <AnalogClock
+            className="sageHeldClock"
             size={104}
             style={{
               position: "absolute",
               left: "52%",
-              top: "70%",
+              top: "58%",
               transform: "translate(-50%, -50%)",
               zIndex: 10,
               pointerEvents: "none"
             }}
           />
-
-          {/* Planted flower should be SMALL (same as left) */}
-          {planted && (
-            <img
-              src="/assets/flow_5.png"
-              alt="planted"
-              draggable={false}
-              style={{
-                position: "absolute",
-                left: "74%",
-                top: "68%",
-                transform: "translate(-50%, -50%)",
-                height: 56,
-                width: "auto",
-                objectFit: "contain",
-                zIndex: 12,
-                pointerEvents: "none"
-              }}
-            />
-          )}
         </div>
       </div>
+
+      {/* ✅ 真正弹窗：居中覆盖 */}
+      <RestIdeasModal
+        open={restModalOpen}
+        onClose={() => setRestModalOpen(false)}
+        tomatoSrc={`/assets/rest_${modalRestFrame}.png`}
+        onRequestNewTomato={() => setModalRestFrame(randInt(1, 5))}
+      />
     </div>
   );
 }
