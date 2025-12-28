@@ -354,14 +354,10 @@ body{
 /* Overlay analog clock on the held clock position (relative to image) */
 .sageHeldClock{
   position: absolute;
-
-  /* ✅ 用百分比：随图片缩放依旧贴在正确位置
-     下面这两个值是按你这张图大致估的，之后你只需要微调这俩 */
-  left: 49%;
-  top: 10%;
-
+  left: 52%;
+  top: 58%;
   transform: translate(-50%, -50%);
-  z-index: 5;
+  z-index: 10;
   pointer-events: none;
 }
 
