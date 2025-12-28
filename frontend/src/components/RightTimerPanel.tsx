@@ -12,7 +12,6 @@ function fmt(sec: number) {
 }
 
 function randInt(min: number, max: number) {
-  // inclusive
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
@@ -26,12 +25,11 @@ export default function RightTimerPanel({
   const [workMin, setWorkMin] = useState(25);
   const [restMin, setRestMin] = useState(5);
 
-  // session-based random tomato frame:
   // work: 1..6, rest: 1..5
   const [workFrame, setWorkFrame] = useState<number>(() => randInt(1, 6));
   const [restFrame, setRestFrame] = useState<number>(() => randInt(1, 5));
 
-  // ✅ rest ideas modal state + tomato frame inside modal
+  // ✅ modal state + modal tomato frame (1..5)
   const [restModalOpen, setRestModalOpen] = useState(false);
   const [modalRestFrame, setModalRestFrame] = useState<number>(() => randInt(1, 5));
 
@@ -53,21 +51,17 @@ export default function RightTimerPanel({
 
   const onApply = async () => {
     await timerSet("work", workMin, bindTask);
-    // NOTE: restMin still only UI for now (can add backend support later)
   };
 
   const onStart = async () => {
-    // randomize once per Start
     setWorkFrame(randInt(1, 6));
     setRestFrame(randInt(1, 5));
     await timerControl("start");
   };
 
-  // ✅ only clickable in Rest
-  const onTomatoClick = () => {
+  const openRestModal = () => {
     if (!isRest) return;
-    // 每次打开弹窗都随机一个番茄
-    setModalRestFrame(randInt(1, 5));
+    setModalRestFrame(randInt(1, 5)); // 每次打开随机一个番茄
     setRestModalOpen(true);
   };
 
@@ -124,23 +118,23 @@ export default function RightTimerPanel({
       </div>
 
       <div style={{ marginTop: 14, display: "flex", alignItems: "center", gap: 16 }}>
-        {/* ✅ tomato clickable only in rest */}
-        <button
-          type="button"
-          className={`tomatoBtn ${isRest ? "isRest" : ""}`}
-          onClick={onTomatoClick}
-          title={isRest ? "Click for a rest idea" : "Rest ideas available during rest"}
-          aria-label="Rest ideas"
-        >
-          <img
-            src={tomatoSrc}
-            alt="tomato"
-            style={{ width: 90, height: 90, objectFit: "contain" }}
-            onError={(e) => {
-              (e.currentTarget as HTMLImageElement).style.display = "none";
-            }}
-          />
-        </button>
+        {/* ✅ 不加背景：纯 img，可点区域就是图片本身 */}
+        <img
+          src={tomatoSrc}
+          alt="tomato"
+          className={isRest ? "restTomatoClickable" : ""}
+          onClick={openRestModal}
+          style={{
+            width: 90,
+            height: 90,
+            objectFit: "contain",
+            cursor: isRest ? "pointer" : "default"
+          }}
+          onError={(e) => {
+            (e.currentTarget as HTMLImageElement).style.display = "none";
+          }}
+          title={isRest ? "Click for a rest idea" : ""}
+        />
 
         <div className="timerDigits">
           <div className="digitBox">{digits[0]}</div>
@@ -156,12 +150,13 @@ export default function RightTimerPanel({
           Scene · Real-time clock is shown on sage’s clock
         </div>
 
-        {/* ✅关键：sceneStage 不再无限随 panel 拉伸；加 maxWidth 同步缩放 */}
+        {/* ✅ 固定 sceneStage 缩放基准，避免 panel 拉伸导致钟不同步 */}
         <div
           className="sceneStage"
           style={{
             maxWidth: 560,
-            margin: "0 auto"
+            margin: "0 auto",
+            position: "relative"
           }}
         >
           <img
@@ -173,9 +168,6 @@ export default function RightTimerPanel({
               height: "auto",
               display: "block",
               objectFit: "contain"
-            }}
-            onError={(e) => {
-              (e.currentTarget as HTMLImageElement).style.display = "none";
             }}
           />
 
@@ -194,13 +186,12 @@ export default function RightTimerPanel({
         </div>
       </div>
 
-      {/* ✅ Rest modal */}
+      {/* ✅ 真正弹窗：居中覆盖 */}
       <RestIdeasModal
         open={restModalOpen}
         onClose={() => setRestModalOpen(false)}
-        // 让弹窗番茄在 1..5 里随机：传 frame + 一个回调，骰子时再换
         tomatoSrc={`/assets/rest_${modalRestFrame}.png`}
-        onRollTomato={() => setModalRestFrame(randInt(1, 5))}
+        onRequestNewTomato={() => setModalRestFrame(randInt(1, 5))}
       />
     </div>
   );
