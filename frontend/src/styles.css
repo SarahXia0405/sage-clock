@@ -355,7 +355,7 @@ body{
 .sageHeldClock{
   position: absolute;
   left: 52%;
-  top: 58%;
+  top: 50%;
   transform: translate(-50%, -50%);
   z-index: 10;
   pointer-events: none;
