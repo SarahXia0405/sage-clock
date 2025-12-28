@@ -680,3 +680,31 @@ body{
   }
 }
 
+/* 顶部一整行 */
+.alarmRow{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;               /* 左右整体间距 */
+}
+
+/* Set / Start / Skip */
+.timerControls{
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* Alarm 区域 */
+.alarmControls{
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* Alarm: 文案 */
+.alarmLabel{
+  font-weight: 900;
+  margin-right: 6px;
+  opacity: 0.75;
+}
