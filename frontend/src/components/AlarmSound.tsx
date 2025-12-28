@@ -1,40 +1,47 @@
 import React, { useEffect, useRef } from "react";
 
-export default function AlarmSound({
-  trigger,
-  src = "/assets/alarm.mp3",
-  volume = 0.9
-}: {
-  trigger: number;     // 每次需要响铃就 +1
-  src?: string;
+type Props = {
+  /** Audio source URL. Can be "/assets/alarm.mp3" or a blob: URL */
+  src: string;
+
+  /** Increment this key to trigger playback once */
+  playKey: number;
+
+  /** Optional: volume 0..1 */
   volume?: number;
-}) {
+};
+
+export default function AlarmSound({ src, playKey, volume = 1 }: Props) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const lastSrcRef = useRef<string>("");
 
+  // Keep <audio> element in sync with src
   useEffect(() => {
-    if (trigger <= 0) return;
+    if (!audioRef.current) return;
+    if (lastSrcRef.current === src) return;
+    lastSrcRef.current = src;
+    audioRef.current.src = src;
+    // don't auto-play on src change
+  }, [src]);
 
-    // 首次创建
-    if (!audioRef.current) {
-      const a = new Audio(src);
-      a.preload = "auto";
-      a.volume = volume;
-      audioRef.current = a;
-    }
-
+  // Play once when playKey changes
+  useEffect(() => {
     const a = audioRef.current;
+    if (!a) return;
 
-    // 重新从头播放
-    try {
-      a.pause();
-      a.currentTime = 0;
-    } catch {}
+    // Best-effort: allow replay even if last sound still "loading"
+    a.pause();
+    a.currentTime = 0;
+    a.volume = Math.max(0, Math.min(1, volume));
 
-    // play() 可能被浏览器阻止（未发生用户交互时）
-    a.play().catch(() => {
-      // 静默失败即可；通常用户点过 Start 后就允许播放了
-    });
-  }, [trigger, src, volume]);
+    const p = a.play();
+    if (p && typeof (p as any).catch === "function") {
+      (p as Promise<void>).catch(() => {
+        // Autoplay policies may block if user hasn't interacted yet.
+        // We silently ignore; after any click (Start/Pause/etc.) it will work.
+      });
+    }
+  }, [playKey, volume]);
 
-  return null;
+  return <audio ref={audioRef} preload="auto" />;
 }
