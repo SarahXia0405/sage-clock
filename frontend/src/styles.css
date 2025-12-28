@@ -375,3 +375,132 @@ body{
   height: auto !important;
 }
 
+/* clickable tomato: no background, only slight lift */
+.restTomatoClickable:hover{
+  transform: translateY(-1px);
+}
+.restTomatoClickable:active{
+  transform: translateY(0px);
+}
+
+/* true modal */
+.modalOverlay{
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+.modalCard{
+  width: min(860px, calc(100vw - 48px));
+  height: min(460px, calc(100vh - 80px));
+  background: #bfbfbf;
+  border-radius: 32px;
+  box-shadow: 0 22px 60px rgba(0,0,0,0.22);
+  position: relative;
+  padding: 28px 30px;
+}
+
+.modalClose{
+  position: absolute;
+  top: 16px;
+  right: 18px;
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  border: 0;
+  background: rgba(255,255,255,0.35);
+  cursor: pointer;
+  font-size: 18px;
+  font-weight: 900;
+}
+
+.modalHeader{
+  display:flex;
+  align-items:center;
+  gap: 18px;
+}
+
+.modalTomato{
+  width: 150px;
+  height: 110px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+
+.modalTitle{
+  font-size: 46px;
+  font-weight: 900;
+  letter-spacing: 0.01em;
+  color: #111;
+}
+
+.modalBody{
+  margin-top: 28px;
+  display:flex;
+  align-items:center;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.modalIdeaBox{
+  flex: 1;
+  height: 170px;
+  border-radius: 22px;
+  border: 2px solid rgba(0,0,0,0.75);
+  background: rgba(255,255,255,0.10);
+  padding: 18px 20px;
+  display:flex;
+  align-items:center;
+}
+
+.modalIdeaText{
+  font-size: 24px;
+  font-weight: 800;
+  color: #111;
+  line-height: 1.25;
+}
+
+.diceBtn{
+  width: 180px;
+  height: 180px;
+  border-radius: 26px;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  position: relative;
+  transform-origin: 50% 60%;
+}
+
+.diceBtn img{
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.diceFallback{
+  position:absolute;
+  inset:0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size: 64px;
+}
+
+/* short dice shake animation */
+@keyframes diceShake {
+  0%   { transform: rotate(0deg) translate(0,0); }
+  20%  { transform: rotate(-10deg) translate(-2px, 1px); }
+  40%  { transform: rotate(12deg) translate(3px, -1px); }
+  60%  { transform: rotate(-8deg) translate(-2px, -1px); }
+  80%  { transform: rotate(10deg) translate(2px, 1px); }
+  100% { transform: rotate(0deg) translate(0,0); }
+}
+
+.diceBtn.rolling{
+  animation: diceShake 0.35s ease-in-out;
+}
