@@ -1,7 +1,9 @@
-import React, { useMemo, useState } from "react";
+// frontend/src/components/RightTimerPanel.tsx
+import React, { useMemo, useState, useCallback } from "react";
 import type { AppState } from "../types";
 import { timerControl, timerSet } from "../api";
 import AnalogClock from "./AnalogClock";
+import RestIdeasModal from "./RestIdeasModal";
 
 function fmt(sec: number) {
   const s = Math.max(0, Math.floor(sec));
@@ -14,31 +16,12 @@ function randInt(min: number, max: number) {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
-const DEFAULT_REST_IDEAS: string[] = [
-  "Stand up and stretch your shoulders + neck.",
-  "Drink water — a full glass.",
-  "Do 10 slow deep breaths (4s in, 6s out).",
-  "Look outside / far away for 30 seconds (eye reset).",
-  "Tidy one tiny area: desk corner or one drawer.",
-  "Write 1 sentence: what’s the next smallest step?",
-  "Walk to another room and back (no phone).",
-  "Quick wrist + hand stretches.",
-  "Put on a song and just listen (no scrolling).",
-  "Wash your face / apply lip balm.",
-  "Refill your water bottle.",
-  "Do 10 bodyweight squats or calf raises.",
-  "Open a window (or step outside) for fresh air.",
-  "Send a kind message to someone (one line).",
-  "Check posture: feet flat, shoulders relaxed, jaw unclenched.",
-  "5-minute brain dump: write everything on your mind.",
-  "Make the workspace ‘ready’ for the next work block.",
-  "Do 1-minute mindfulness: notice 5 things you see.",
-  "Prepare the next task materials (open docs, tabs).",
-  "Quick gratitude: write 3 small wins today."
-];
+// If your Left panel drag uses a different payload, change this:
+const FLOWER_DRAG_KEY = "flower_ready";
 
 export default function RightTimerPanel({
-  state
+  state,
+  onState
 }: {
   state: AppState;
   onState: (s: AppState) => void;
@@ -50,8 +33,19 @@ export default function RightTimerPanel({
   const [workFrame, setWorkFrame] = useState<number>(() => randInt(1, 6));
   const [restFrame, setRestFrame] = useState<number>(() => randInt(1, 5));
 
+  // ✅ modal state + modal tomato frame (1..5)
+  const [restModalOpen, setRestModalOpen] = useState(false);
+  const [modalRestFrame, setModalRestFrame] = useState<number>(() => randInt(1, 5));
+
+  // ✅ Garden state (session-local)
+  const [gardenFlowers, setGardenFlowers] = useState<Array<{ id: string; at: number }>>([]);
+
+  // Optional: visual hint when dragging flower over sage scene
+  const [dragOverSage, setDragOverSage] = useState(false);
+
   const remaining = state.timer.remaining_sec;
-  const mode = state.timer.mode;
+  const mode = state.timer.mode; // "work" | "rest"
+  const isRest = mode === "rest";
 
   const digits = useMemo(() => {
     const [m, s] = fmt(remaining).split(":");
@@ -67,7 +61,7 @@ export default function RightTimerPanel({
 
   const onApply = async () => {
     await timerSet("work", workMin, bindTask);
-    // restMin still UI only
+    // restMin still UI-only (kept)
   };
 
   const onStart = async () => {
@@ -76,24 +70,48 @@ export default function RightTimerPanel({
     await timerControl("start");
   };
 
-  // ===== Rest modal =====
-  const [restOpen, setRestOpen] = useState(false);
-  const [idea, setIdea] = useState(() => DEFAULT_REST_IDEAS[randInt(0, DEFAULT_REST_IDEAS.length - 1)]);
-  const [diceShake, setDiceShake] = useState(false);
-
-  const modalTomatoSrc = useMemo(() => `/assets/rest_${randInt(1, 5)}.png`, [restOpen]); // change each open
-
-  const onRoll = () => {
-    if (diceShake) return;
-    setDiceShake(true);
-    window.setTimeout(() => {
-      const next = DEFAULT_REST_IDEAS[randInt(0, DEFAULT_REST_IDEAS.length - 1)];
-      setIdea(next);
-      setDiceShake(false);
-    }, 420);
+  const openRestModal = () => {
+    if (!isRest) return;
+    setModalRestFrame(randInt(1, 5)); // 每次打开随机一个番茄
+    setRestModalOpen(true);
   };
 
-  const canOpenRest = mode === "rest";
+  // ===== Flower drop onto sage scene =====
+  const handleDragOverSage = useCallback((e: React.DragEvent) => {
+    // allow drop
+    e.preventDefault();
+    if (!dragOverSage) setDragOverSage(true);
+  }, [dragOverSage]);
+
+  const handleDragLeaveSage = useCallback(() => {
+    setDragOverSage(false);
+  }, []);
+
+  const handleDropOnSage = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setDragOverSage(false);
+
+    const payload =
+      e.dataTransfer.getData("text/plain") ||
+      e.dataTransfer.getData("application/x-flower") ||
+      "";
+
+    // Accept either exact key, or a JSON-like payload containing it
+    const ok =
+      payload === FLOWER_DRAG_KEY ||
+      payload.includes(FLOWER_DRAG_KEY);
+
+    if (!ok) return;
+
+    // Add one flower into garden
+    setGardenFlowers((prev) => [
+      ...prev,
+      { id: `f_${Date.now()}_${Math.random().toString(16).slice(2)}`, at: Date.now() }
+    ]);
+
+    // Tell Left panel to reset growth (simple event; Left can listen if you want)
+    window.dispatchEvent(new CustomEvent("flower:used"));
+  }, []);
 
   return (
     <div>
@@ -117,7 +135,13 @@ export default function RightTimerPanel({
             value={workMin}
             min={1}
             onChange={(e) => setWorkMin(Number(e.target.value))}
-            style={{ width: 86, height: 44, borderRadius: 14, border: "1px solid rgba(0,0,0,0.12)", padding: "0 12px" }}
+            style={{
+              width: 80,
+              height: 40,
+              borderRadius: 12,
+              border: "1px solid rgba(0,0,0,0.12)",
+              padding: "0 10px"
+            }}
           />
           <span className="mini">min</span>
         </div>
@@ -129,53 +153,85 @@ export default function RightTimerPanel({
             value={restMin}
             min={1}
             onChange={(e) => setRestMin(Number(e.target.value))}
-            style={{ width: 86, height: 44, borderRadius: 14, border: "1px solid rgba(0,0,0,0.12)", padding: "0 12px" }}
+            style={{
+              width: 80,
+              height: 40,
+              borderRadius: 12,
+              border: "1px solid rgba(0,0,0,0.12)",
+              padding: "0 10px"
+            }}
           />
           <span className="mini">min</span>
         </div>
       </div>
 
       <div style={{ marginTop: 14, display: "flex", alignItems: "center", gap: 16 }}>
-        {/* tomato as button: no background */}
-        <button
-          className="tomatoBtn"
-          type="button"
-          onClick={() => { if (canOpenRest) setRestOpen(true); }}
-          disabled={!canOpenRest}
-          title={canOpenRest ? "Open rest ideas" : "Only available during rest"}
-        >
-          <img
-            src={tomatoSrc}
-            alt="tomato"
-            style={{ width: 92, height: 92, objectFit: "contain" }}
-          />
-        </button>
+        {/* ✅ 不加背景：纯 img，可点区域就是图片本身 */}
+        <img
+          src={tomatoSrc}
+          alt="tomato"
+          className={isRest ? "restTomatoClickable" : ""}
+          onClick={openRestModal}
+          style={{
+            width: 90,
+            height: 90,
+            objectFit: "contain",
+            cursor: isRest ? "pointer" : "default"
+          }}
+          onError={(e) => {
+            (e.currentTarget as HTMLImageElement).style.display = "none";
+          }}
+          title={isRest ? "Click for a rest idea" : ""}
+        />
 
         <div className="timerDigits">
           <div className="digitBox">{digits[0]}</div>
           <div className="digitBox">{digits[1]}</div>
-          <div style={{ fontSize: 44, fontWeight: 900 }}>:</div>
+          <div style={{ fontSize: 40, fontWeight: 900 }}>:</div>
           <div className="digitBox">{digits[2]}</div>
           <div className="digitBox">{digits[3]}</div>
         </div>
       </div>
 
+      {/* ===== Scene (sage + real-time clock) ===== */}
       <div className="scene">
         <div className="mini" style={{ marginBottom: 8 }}>
-          Scene · Real-time clock is shown on sage’s clock
+          Scene · Drop your grown flower onto sage to plant it
         </div>
 
-        <div className="sceneStage">
-          <img className="sceneImg" src="/assets/scene_sage.png" alt="scene" />
+        {/* ✅ 固定 sceneStage 缩放基准，避免 panel 拉伸导致钟不同步 */}
+        <div
+          className={`sceneStage ${dragOverSage ? "sceneStageDropActive" : ""}`}
+          style={{
+            maxWidth: 560,
+            margin: "0 auto",
+            position: "relative"
+          }}
+          onDragOver={handleDragOverSage}
+          onDragLeave={handleDragLeaveSage}
+          onDrop={handleDropOnSage}
+          title="Drop flower here to plant"
+        >
+          <img
+            className="sceneImg"
+            src="/assets/scene_sage.png"
+            alt="scene"
+            style={{
+              width: "100%",
+              height: "auto",
+              display: "block",
+              objectFit: "contain"
+            }}
+            draggable={false}
+          />
 
-          {/* Keep your existing placement; tweak left/top if needed */}
           <AnalogClock
             className="sageHeldClock"
             size={104}
             style={{
               position: "absolute",
               left: "52%",
-              top: "70%",
+              top: "58%",
               transform: "translate(-50%, -50%)",
               zIndex: 10,
               pointerEvents: "none"
@@ -184,35 +240,40 @@ export default function RightTimerPanel({
         </div>
       </div>
 
-      {/* ===== Rest modal ===== */}
-      {restOpen && (
-        <div className="modalOverlay" onMouseDown={() => setRestOpen(false)}>
-          <div className="modalCard" onMouseDown={(e) => e.stopPropagation()}>
-            <button className="modalClose" onClick={() => setRestOpen(false)} aria-label="Close">
-              ×
-            </button>
-
-            <div className="modalTitleRow">
-              <img src={modalTomatoSrc} alt="rest tomato" style={{ width: 130, height: 130, objectFit: "contain" }} />
-              <div className="modalTitle">Things to do during rest</div>
-            </div>
-
-            <div className="modalIdeaBox">
-              {idea}
-            </div>
-
-            {/* keep your dice image (no dice.png) */}
-            <button className="diceBtn" type="button" onClick={onRoll} aria-label="Roll">
-              <img
-                src="/assets/dice_3d.png"
-                alt="dice"
-                className={diceShake ? "diceShake" : ""}
-                draggable={false}
-              />
-            </button>
-          </div>
+      {/* ===== Garden (below sage) ===== */}
+      <div className="gardenStage">
+        <div className="gardenBg">
+          <img
+            src="/assets/garden.png"
+            alt="garden"
+            draggable={false}
+            onError={(e) => {
+              (e.currentTarget as HTMLImageElement).style.display = "none";
+            }}
+          />
         </div>
-      )}
+
+        <div className="gardenFlowers">
+          {gardenFlowers.map((f) => (
+            <img
+              key={f.id}
+              src="/assets/flow_5.png"
+              className="gardenFlower"
+              draggable={false}
+              alt="flower"
+              title={new Date(f.at).toLocaleString()}
+            />
+          ))}
+        </div>
+      </div>
+
+      {/* ✅ 真正弹窗：居中覆盖（你已有独立组件） */}
+      <RestIdeasModal
+        open={restModalOpen}
+        onClose={() => setRestModalOpen(false)}
+        tomatoSrc={`/assets/rest_${modalRestFrame}.png`}
+        onRequestNewTomato={() => setModalRestFrame(randInt(1, 5))}
+      />
     </div>
   );
 }
