@@ -325,28 +325,31 @@ body{
 }
 
 /* Overlay analog clock on the clock sage is holding */
-.sageHeldClock{
-  position: absolute;
-  /* 先给一个默认值，按你图一大概位置；你可以微调这两个 */
-  left: 270px;
-  top: 270px;
-  z-index: 5;
-  pointer-events: none;
-}
-
-/* stage is the positioning context */
 .sceneStage{
   position: relative;
   width: 100%;
   display: block;
 }
 
-/* keep image responsive */
 .sceneImg{
   display: block;
   width: 100%;
   height: auto;
 }
+
+.sageHeldClock{
+  position: absolute;
+
+  /* 先用一个很夸张的值，确保你能看到它移动 */
+  left: 50%;
+  top: 20%;
+
+  transform: translate(-50%, -50%);
+  z-index: 10;
+  pointer-events: none;
+}
+
+
 
 /* Overlay analog clock on the held clock position (relative to image) */
 .sageHeldClock{
