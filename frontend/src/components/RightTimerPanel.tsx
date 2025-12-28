@@ -135,14 +135,14 @@ export default function RightTimerPanel({
       
         <div className="sceneStage">
           <img className="sceneImg" src="/assets/scene_sage.png" alt="scene" />
-      
+
           <AnalogClock
             className="sageHeldClock"
             size={104}
             style={{
               position: "absolute",
               left: "52%",
-              top: "35%",
+              top: "58%",
               transform: "translate(-50%, -50%)",
               zIndex: 10,
               pointerEvents: "none"
